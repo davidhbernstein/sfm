@@ -76,22 +76,10 @@ HI
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{## R Package
-## first install "psfm" to local directory, then this code will run
+##To install in R: 
 
-## To INSTALL: 1) setwd to location of downloaded file -- 2)ensure not extra folder
-## 3) install devtools and roxygen2, 4) install other packages bellow and 5) install psfm: 
-
-## be sure all these packages are installed for psfm to run  
-list.of.packages = c("plm","minqa","randtoolbox","matrixStats","frontier","Jmisc","mnormt", "devtools", "roxygen2", "truncnorm", "tmvtnorm") 
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages) > 0) {install.packages(new.packages)}
-lapply(list.of.packages, require, character.only=T)  
-rm(list.of.packages, new.packages)
-
-
-install("sfm")
-
-
+library(devtools)
+install_github("davidhbernstein/sfm")  
 
 rm(list = ls())
 

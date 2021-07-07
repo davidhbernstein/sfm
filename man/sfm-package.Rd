@@ -13,7 +13,7 @@
 The DESCRIPTION file:
 \packageDESCRIPTION{sfm}
 \packageIndices{sfm}
-This package is currently being developed to work in a wide range of applications.   The main function of the package is "sfm" which can apply four different panel based SFA estimators.
+This package is currently being developed to work in a wide range of applications.   The main functions of the package are "sfm" and "psfm" which can apply different cross-sectional and panel based SFA estimators.
 }
 \author{
 \packageAuthor{sfm}
@@ -25,19 +25,10 @@ Maintainer: \packageMaintainer{sfm}
 \keyword{ package }
 \seealso{\code{\url{http://www.davidharrybernstein.com/software}{http://www.davidharrybernstein.com/software}}}
 \examples{
-## To INSTALL: 1) setwd to location of downloaded file -- 2)ensure not extra folder
-## 3) install devtools and roxygen2, 4) install other packages bellow and 5) install sfm: 
+To install in R: 
 
-## be sure all these packages are installed for sfm to run  
-list.of.packages = c("plm","minqa","randtoolbox","matrixStats","frontier","Jmisc","mnormt", "devtools", "roxygen2") 
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages) > 0) {install.packages(new.packages)}
-lapply(list.of.packages, require, character.only=T)  
-rm(list.of.packages, new.packages)
-
-install("sfm")
-
-
+library(devtools)
+install_github("davidhbernstein/sfm")  
 
 ## Simple application of the generalized true random effects estimator.
 

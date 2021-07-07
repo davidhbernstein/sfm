@@ -33,7 +33,11 @@ data_gen_p(t, N, rand, sig_u, sig_v, sig_r, sig_h, cons, tau, mu, beta1, beta2)
 
 \seealso{data_gen_p, to see all the true data generating processes}
 \examples{
-## be sure plm is installed to run this 
+
+##To install in R: 
+
+library(devtools)
+install_github("davidhbernstein/sfm")
 
 library(sfm) 
 

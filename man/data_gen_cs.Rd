@@ -13,32 +13,32 @@ data_gen_cs(N, rand, sig_u, sig_v, cons, beta1, beta2, a)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{N}{
-HI
+Individuals
 }
   \item{rand}{
-HI
+random seed 
 }
   \item{sig_u}{
-HI
+sigma u 
 }
   \item{sig_v}{
-HI
+sigma v
 }
   \item{cons}{
-HI
+constant
 }
   \item{beta1}{
-HI
+beta 1 
 }
   \item{beta2}{
-HI
+beta 2
 }
   \item{a}{
-HI
+a from the THT 
 }
 }
 \details{
-HI
+set the parameters above as desired for simulations
 }
 \value{
 %%  ~Describe the value returned
@@ -47,35 +47,6 @@ HI
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-HI
-}
 \author{
 David Bernstein
 }
-\note{
-HI
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-HI
-}
-\examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-HI
-  }
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory (show via RShowDoc("KEYWORDS")):
-% \keyword{ ~kwd1 }
-% \keyword{ ~kwd2 }
-% Use only one keyword per line.
-% For non-standard keywords, use \concept instead of \keyword:
-% \concept{ ~cpt1 }
-% \concept{ ~cpt2 }
-% Use only one concept per line.

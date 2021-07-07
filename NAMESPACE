@@ -18,3 +18,4 @@ import("readxl") # import whole package
 import("haven") # import whole package
 import("fdrtool") # import whole package
 import("numDeriv") # import whole package
+import("roxygen2") # import whole package

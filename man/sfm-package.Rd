@@ -34,9 +34,10 @@ install_github("davidhbernstein/sfm")
 
 library(sfm)
 
-data("data_trial")
+data("p_data_trial")
 
-max_gtre         <-   psfm(formula = y_gtre ~ x1+x2,    
-                            model = "GTRE", 
-                            data=data_trial,
-                            individual = "name")
+gtre_sml   <- psfm(formula    = y_gtre ~ x1 + x2,    
+                   model_name = "GTRE", 
+                   data       = p_data_trial,
+                   individual = "name",
+                   PSopt      = FALSE)

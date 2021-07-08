@@ -1,5 +1,5 @@
 sfm <- function(formula, 
-                model_name = c("NHN","START","NHN_Z","NE","NE_Z","THT"), 
+                model_name = c("NHN","NHN_Z","NE","NE_Z","THT","NTN"), 
                 data, 
                 maxit=100000,
                 maxit_2 =1000, 
@@ -93,20 +93,43 @@ sfm <- function(formula,
   # exp_u          <- sfa_eps$mleParam[c(1)]
   sigma_u        <- 0.1  #coef(sfa_eps,extraPar=TRUE)[c("sigmaU")]
   sigma_v        <- 0.1  #coef(sfa_eps,extraPar=TRUE)[c("sigmaV")]
+  mu             <- 0.1 
   beta_0         <- beta_0_st  
   lambda         <- sigma_u/sigma_v
   sigma          <- sqrt(sigma_u^2 + sigma_v^2)
   
+  start_v_ntn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,mu,beta_hat))} else{unname(c(lambda,sigma,mu,beta_0,beta_hat)) }
   start_v_t      <- if(is.na(beta_0_st)) {unname(c(sigma_u,sigma_v,1,beta_hat))} else{unname(c(sigma_u,sigma_v,1,beta_0,beta_hat)) }
   start_v_ne     <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,beta_hat))} else{unname(c(sigma_v,sigma_u,beta_0,beta_hat)) }
-  start_v        <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,beta_hat))} else{unname(c(lambda,sigma,beta_0,beta_hat)) }
+  start_v_nhn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,beta_hat))} else{unname(c(lambda,sigma,beta_0,beta_hat)) }
   
+  if(model_name=="NHN"){
+    start_v <-  start_v_nhn
+    out            <- matrix(0,nrow = 3,ncol = length(start_v))
+    colnames(out)  <- c("lambda","sigma",c(names(plm_lm$coefficients)))
+    lower_bob <- c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars))}
+  if(model_name=="NE"){
+    start_v <- start_v_ne
+    out            <- matrix(0,nrow = 3,ncol = length(start_v))
+    colnames(out)  <- c("sigv","sigu",c(names(plm_lm$coefficients)))
+    lower_bob <- c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars))}
+  if(model_name=="THT"){
+    start_v <- start_v_t
+    out            <- matrix(0,nrow = 3,ncol = length(start_v))
+    colnames(out)  <- c("sigv","sigu","a",c(names(plm_lm$coefficients))) 
+    lower_bob <- c(rep(.Machine$double.eps,3),rep(-Inf,n_x_vars))}
+  if(model_name=="NTN"){
+    start_v <-  start_v_ntn
+    out            <- matrix(0,nrow = 3,ncol = length(start_v))
+    colnames(out)  <- c("lambda","sigma","mu",c(names(plm_lm$coefficients))) 
+    lower_bob <- c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars+1))}
+  if(model_name %in% c("NHN_Z","NE_Z") ){
+      start_v <- start_v_nhn
+      out            <- matrix(0,nrow = 3,ncol = length(start_v))}
   
   if (isTRUE(is.numeric(start_val))) {start_v <- start_val} 
   
-  out            <- matrix(0,nrow = 3,ncol = length(start_v))
   rownames(out)  <- c("par","st_err","t-val") 
-  colnames(out)  <- c("lambda","sig",c(names(plm_lm$coefficients))) 
   
   Y             <-  as.matrix(subset(data,select = y_var))
   data_i_vars   <-  as.matrix(data.frame(subset(data,select = x_vars_vec)))
@@ -114,22 +137,52 @@ sfm <- function(formula,
   upper <- NA
   
   ###################################################################
-  
-  if(model_name == "START"){ return(start_v)}
-  
-  if(model_name == "NHN"){
+
+  if(model_name %in% c("NHN","NE","THT","NTN") ){
+
     print(start_time <- Sys.time())
     
     fn = function(x){
-      for (q in 1:n_x_vars){
-        v             <- q + 2
-        x_x_vec[q]    <- x[v]}
+      
+      if(model_name %in% c("NHN","NE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
+      if(model_name ==     "THT"){      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
+      if(model_name ==     "NTN"){      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
       
       eps     <- (inefdec_n*(Y  - as.matrix(data_i_vars)%*%x_x_vec))
       
-      like  <-  as.numeric(log(     pmax(   (2/x[2])    * 
+      if(model_name == "NHN"){
+      like  <-      as.numeric(log(     pmax(   (2/x[2])    * 
                                               dnorm(eps/x[2]) *
-                                              pnorm(-eps*x[1]/x[2])  ,  eps*0+.Machine$double.eps )    ))
+                                              pnorm(-eps*x[1]/x[2])  ,  eps*0+.Machine$double.eps )    ))}
+      if(model_name == "NE"){
+      l1    <- log(1/x[2])
+      l2    <- pnorm( -(eps/x[1]) - (x[1]    /x[2]), log.p = TRUE)
+      l3    <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
+      
+      like  <-  l1+l2+l3}
+      
+      if(model_name=="THT"){
+        sig_u   <- x[1]
+        sig_v   <- x[2]
+        a       <- x[3]
+        lamb    <- sig_u/sig_v
+        sig     <- sqrt(sig_v^2 + sig_u^2)
+        
+        like  <-  as.numeric(log(     pmax(2*dt(eps, df=a)*
+                                             pt((-eps*lamb/sig)*sqrt((a+1)/(sig^{-2}*eps^2 + a))  ,df=a+1)  ,  eps*0+.Machine$double.eps)))  }
+      
+      if(model_name=="NTN"){
+        lam   <- x[1]
+        sig   <- x[2]
+        mu    <- x[3]
+        
+        l1 <- -log(sig^2)/2
+        l2 <- -log(2*pi)/2
+        l3 <- -(1/(2*sig^2))*(eps-mu)^2  
+        l4 <-  pnorm(((mu/lam)+eps*lam)/sig,   log.p=TRUE)  
+        l5 <- -pnorm((mu/sig)*sqrt(1+lam^(-2)),log.p=TRUE)  
+        
+        like <- l1 + l2 + l3 + l4 + l5}
       
       like[like==-Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
       like[like== Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
@@ -137,21 +190,26 @@ sfm <- function(formula,
       
       return(-sum(like[is.finite(like)]) ) }  
     
+    ## Optimization time 
     print(start_fun   <- fn(start_v))
     
     if(isTRUE(bob == TRUE)){
       bob1   <- bobyqa(par = start_v, 
                        fn = fn,
-                       lower = c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars)) ,
+                       lower = lower_bob ,
                        control = list(iprint = 2, maxfun= maxit)) }
     
     if (isTRUE(start_fun > bob1$fval) ) {start_v <- bob1$par}
     
+    if (PSopt==TRUE){
     differ  <- 1
     
+    if(model_name %in% c("NHN","NE","NTN") ){lower_pso <- c(rep(.00000000001,2), start_v[-c(1:2)] - differ )}
+    if(model_name=="THT"){                   lower_pso <- c(rep(.00000000001,3), start_v[-c(1:3)] - differ )}
+
     opt00  <- psoptim(par = start_v,
                       fn=fn,
-                      lower = c(rep(.00000000001,2), start_v[-c(1:2)] - differ ),
+                      lower = lower_pso,
                       upper = c(start_v + differ ),
                       control = list(trace      = 1,
                                      REPORT     = maxit_2/10,
@@ -159,12 +217,15 @@ sfm <- function(formula,
                                      trace.stats= TRUE,
                                      rand.order = FALSE))
     
-    if (bob1$fval > opt00$value) {start_v <-  opt00$par }
+    if (bob1$fval > opt00$value) {start_v <-  opt00$par } }
     
+    if(model_name %in% c("NHN","NE") ){lower_opt <- c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars))}
+    if(model_name=="THT"){             lower_opt <- c(rep(.Machine$double.eps,3),rep(-Inf,n_x_vars))}
+    if(model_name=="NTN"){             lower_opt <- c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars+1))}
     
     opt <- optim(par = start_v, 
                  fn = fn,
-                 lower = c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars)),upper=upper,
+                 lower = lower_opt, upper=upper,
                  control = list(maxit = maxit, REPORT = REPORT, trace = trace, pgtol=pgtol),
                  hessian = TRUE, method = method)
     
@@ -175,6 +236,7 @@ sfm <- function(formula,
     out[3,]    <- t_val
     print(t(out))
     
+    if(model_name=="NHN"){
     beta  <- opt$par[-c(1:2)]
     lamb  <- opt$par[1]
     sig   <- opt$par[2]
@@ -188,16 +250,22 @@ sfm <- function(formula,
     exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/  pmax( (1-pnorm(inner)), .Machine$double.eps)    )*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
     
     exp_u_hat  <- pmax(exp_u_hat, 0)
-    exp_u_hat  <- pmin(exp_u_hat, 1)
+    exp_u_hat  <- pmin(exp_u_hat, 1)}
     
     print(total_time <- Sys.time() - start_time)
     
+    if(model_name=="NHN"){
     ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, exp_u_hat)
-    names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","exp_u_hat")
+    names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","exp_u_hat")}else{
+    ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula)
+    names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula")
+    }
     
     return(ret_stuff)}
   
-  if(model_name == "NHN_Z"){
+  ###################################################################
+  
+  if(model_name %in% c("NE_Z","NHN_Z")){
     print(start_time <- Sys.time())
     start_time <- Sys.time()
     
@@ -238,6 +306,7 @@ sfm <- function(formula,
       
       eps     <- inefdec_n*(Y  - as.matrix(data_i_vars)%*%x_x_vec)
       
+      if(model_name=="NHN_Z"){
       sigma_u_fun    <- exp(as.matrix(data_z_vars)%*%z_z_vec)
       sigma_v_fun    <- x[1]
       sigma_fun      <- sqrt(sigma_v_fun^2 + sigma_u_fun^2)
@@ -245,7 +314,19 @@ sfm <- function(formula,
       
       like  <-       log(pmax(   (2/sigma_fun)  * 
                                    dnorm(eps/sigma_fun)*  
-                                   pnorm(-eps*lamb_fun/sigma_fun)  , eps*0+.Machine$double.eps) )  
+                                   pnorm(-eps*lamb_fun/sigma_fun)  , eps*0+.Machine$double.eps) )}
+      
+      if(model_name=="NE_Z"){
+        sigma_u_fun    <- exp(data_z_vars%*%z_z_vec)
+        sigv           <- x[1]
+        
+        l1    <- log(1/sigma_u_fun)
+        l2    <- pnorm( -(eps/sigv) - (sigv    /sigma_u_fun), log.p = TRUE)
+        l3    <- (eps/sigma_u_fun) + (sigv^2 /  (2*sigma_u_fun^2) )
+        
+        like  <-  l1+l2+l3
+      }
+      
       
       like[like==-Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
       like[like== Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
@@ -310,6 +391,7 @@ sfm <- function(formula,
     out[3,]    <- t_val
     print(t(out))
     
+    if(model_name=="NHN_Z"){
     ## TE Measurements 
     NX    <- n_x_vars + 1
     NZ1   <- n_x_vars + 2
@@ -330,328 +412,21 @@ sfm <- function(formula,
     exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/  pmax( (1-pnorm(inner)), .Machine$double.eps)  )*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
     
     exp_u_hat  <- pmax(exp_u_hat, 0)
-    exp_u_hat  <- pmin(exp_u_hat, 1)
+    exp_u_hat  <- pmin(exp_u_hat, 1)}
     
     print(total_time <- Sys.time() - start_time)
-    
-    ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula,exp_u_hat)
-    names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","exp_u_hat")
+
+    if(model_name=="NHN_Z"){
+      ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, exp_u_hat)
+      names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","exp_u_hat")}else{
+        ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula)
+        names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula")
+      }
     
     return(ret_stuff)} 
   
   ###################################################################
-  
-  if(model_name == "NE"){
-    print(start_time <- Sys.time())
-    
-    fn = function(x){
-      for (q in 1:n_x_vars){
-        v             <- q + 2
-        x_x_vec[q]    <- x[v]}
-      
-      eps   <- inefdec_n*(Y  - as.matrix(data_i_vars)%*%x_x_vec)
-      
-      sigu  <- x[2]
-      sigv  <- x[1]
-      
-      l1    <- log(1/sigu)
-      l2    <- pnorm( -(eps/sigv) - (sigv    /sigu), log.p = TRUE)
-      l3    <- (eps/sigu) + (sigv^2 /  (2*sigu^2)  )
-      
-      like  <-  l1+l2+l3
-      
-      like[like==-Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
-      like[like== Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
-      like[is.nan(like)]       <-  -sqrt(.Machine$double.xmax/length(x))
-      
-      return(-sum(like[is.finite(like)]) ) }  
-    
-    print(start_fun   <- fn(start_v_ne))
-    
-    # if(isTRUE(bob == TRUE)){
-    #   bob1   <- bobyqa(par = start_v_ne,
-    #                    fn = fn,
-    #                    lower = c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars)) ,
-    #                    control = list(iprint = 2, maxfun=maxit)) }
-    # 
-    # if (isTRUE(start_fun > bob1$fval) ) {start_v_ne <- bob1$par}
-    
-    differ  <- 1000
-    # 
-    # opt00  <- psoptim(par = start_v_ne,
-    #                   fn=fn,
-    #                   lower = c(rep(.00000000001,2), start_v[-c(1:2)] - differ ),
-    #                   upper = c(start_v + differ ),
-    #                   control = list(trace      = 1,
-    #                                  REPORT     = maxit_2/10,
-    #                                  maxit      = maxit_2,
-    #                                  trace.stats= TRUE,
-    #                                  hybrid     = FALSE))
-    # 
-    # if (bob1$fval > opt00$value) {start_v_ne <-  opt00$par }
-    
-    
-    opt <- optim(par = start_v_ne,
-                 fn = fn,
-                 lower = c(rep(.Machine$double.eps,2), rep(-Inf,length(start_v_ne[-c(1:2)])) ),
-                 control = list(maxit = maxit_2, 
-                                REPORT = REPORT, 
-                                trace = trace, 
-                                pgtol=pgtol),
-                 hessian = TRUE, method = method)
-    
-    out            <- matrix(0,nrow = 3,ncol = length(start_v))
-    rownames(out)  <- c("par","st_err","t-val") 
-    colnames(out)  <- c("sigv","sigu",c(names(plm_lm$coefficients))) 
-    
-    st_err     <- if (isTRUE(as.numeric(sum(colMeans(opt$hessian))) == 0 ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
-    t_val      <- opt$par/st_err
-    out[1,]    <- opt$par
-    out[2,]    <- st_err
-    out[3,]    <- t_val
-    print(t(out))
-    print(fn(opt$par))
-    
-    # beta  <- opt$par[-c(1:2)]
-    # lamb  <- opt$par[1]
-    # sig   <- opt$par[2]
-    # sig_u <- (lamb*sig) / sqrt(1+lamb^2)
-    # sig_v <- sig_u/lamb
-    # 
-    # eps_hat    <- pmin(inefdec_n*(Y - rowSums(t(t(data_i_vars)*beta))),Y*0)
-    # sig_star   <- sig_u*sig_v/sig
-    # inner      <- (lamb*eps_hat)/sig
-    # exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/(1-pnorm(inner)))*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
-    
-    print(total_time <- Sys.time() - start_time)
 
-    ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula)
-    names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula")
-    
-    return(ret_stuff)}
-  
-  if(model_name == "NE_Z"){
-    print(start_time <- Sys.time())
-    start_time <- Sys.time()
-    
-    n_z_vars       <- length(z_vars)
-    z_z_vec        <- rep(0,length= n_z_vars)
-    
-    ## Starting values  
-    plm_pcs        <- lm(formula_x ,data)
-    beta_hat       <- if(isTRUE(intercept==0)){plm(formula_x ,data,effect = "individual")$coefficients[c(x_vars_vec)]} else{plm_pcs$coefficients[-c(1)]}
-    epsilon_hat    <- plm_pcs$residuals
-    beta_0_st      <- if(isTRUE(intercept==0)) {NA} else{plm_pcs$coefficients[c(1)]}
-    beta_se        <- summary(plm_pcs)[[4]][c("(Intercept)"),2]
-    # sfa_eps        <- sfa(epsilon_hat   ~1, ineffDecrease = inefdec_TF)
-    # exp_u          <- sfa_eps$mleParam[c(1)]
-    sigma_v        <- 0.1 #  coef(sfa_eps,extraPar=TRUE)[c("sigmaV")]
-    beta_0         <- beta_0_st  
-    delta          <- rep(0.1,length(z_vars))
-    
-    start_v        <- if(is.na(beta_0_st)) {unname(c(sigma_v,beta_hat,delta))} else{unname(c(sigma_v,beta_0,beta_hat,delta))}
-    
-    if (isTRUE(is.numeric(start_val))) {start_v <- start_val} 
-    
-    out            <- matrix(0,nrow = 3,ncol = length(start_v))
-    rownames(out)  <- c("par","st_err","t-val") 
-    colnames(out)  <- c("sigma_v",c(names(plm_pcs$coefficients)),z_vars) 
-    
-    Y             <-  as.matrix(subset(data,select = y_var))
-    data_i_vars   <-  as.matrix(data.frame(subset(data,select = x_vars_vec)))
-    data_z_vars   <-  as.matrix(data.frame(subset(data,select = z_vars)))
-    
-    
-    fn = function(x){
-      for (q in 1:n_x_vars){
-        v             <- q + 1
-        x_x_vec[q]    <- x[v]}
-      
-      for (qq in 1:n_z_vars){
-        v              <- qq  + 1 + n_x_vars
-        z_z_vec[qq]    <- x[v]}
-      
-      eps     <- inefdec_n*(Y  - as.matrix(data_i_vars)%*%x_x_vec)
-      
-      sigma_u_fun    <- exp(data_z_vars%*%z_z_vec)
-      sigv           <- x[1]
-      
-      l1    <- log(1/sigma_u_fun)
-      l2    <- pnorm( -(eps/sigv) - (sigv    /sigma_u_fun), log.p = TRUE)
-      l3    <- (eps/sigma_u_fun) + (sigv^2 /  (2*sigma_u_fun^2) )
-      
-      like  <-  l1+l2+l3
-      
-      like[like==-Inf]         <-  -sqrt(.Machine$double.xmax/length(x))
-      like[like== Inf]         <-  -sqrt(.Machine$double.xmax/length(x))
-      like[is.nan(like)]       <-  -sqrt(.Machine$double.xmax/length(x))
-      
-      return(-sum(like[is.finite(like)]) ) } 
-    
-    print("function:  ")    
-    start_feval         <-  fn(start_v)
-    print(start_feval   <-  fn(start_v))
-    
-    if(isTRUE(bob==TRUE)){
-      bob1   <- bobyqa(par = start_v, fn = fn,
-                       lower = c(.Machine$double.eps , rep(-.Machine$double.xmax^.1,length(start_v[-c(1)]))   ),
-                       control = list(iprint = 2, 
-                                      maxfun = maxit,
-                                      rhobeg = 0.01,
-                                      rhoend  =1e-12))
-      
-      if(isTRUE(start_feval > bob1$fval )) {start_v <- bob1$par} else{print("no improvement from bobyqa")}
-    }
-    
-    
-    start_feval   <-  fn(start_v)
-    differ  <- 1
-    
-    if(isTRUE(PSopt==TRUE)){
-      
-      differ  <- 1
-      
-      opt00 <- psoptim(par     = start_v, 
-                       fn      = fn,
-                       lower = c(0.00001 , rep(start_v[-c(1)]) -differ  ),
-                       upper   = c(start_v+differ),
-                       control = list(trace          = 1,
-                                      REPORT         = maxit_2/10,
-                                      trace.stats    = TRUE,
-                                      maxit          = maxit_2))
-      
-      if(isTRUE(start_feval > opt00$value )) {start_v <- opt00$par} else{print("no improvement from psoptim")}
-      
-    }
-    
-    differ  <- 1
-    
-    opt <- optim(par = start_v, fn = fn,
-                 lower = c(0.00001 , start_v[-c(1)] -differ  ),
-                 control = list(maxit = maxit_2, 
-                                REPORT = REPORT, 
-                                trace = trace, 
-                                pgtol=pgtol,
-                                factr  = 1e9),   
-                 hessian = TRUE,
-                 method = method)
-    
-    start_v    <- opt$par
-    
-    st_err     <- if (isTRUE(as.numeric(sum(colMeans(opt$hessian))) == 0 ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
-    t_val      <- opt$par/st_err
-    out[1,]    <- opt$par
-    out[2,]    <- st_err
-    out[3,]    <- t_val
-    print(t(out))
-    
-    # beta  <- opt$par[-c(1)]
-    # lamb  <- opt$par[1]
-    # sig   <- opt$par[2]
-    # sig_u <- (lamb*sig) / sqrt(1+lamb^2)
-    # sig_v <- sig_u/lamb
-    # 
-    # eps_hat    <- pmin(inefdec_n*(Y - rowSums(t(t(data_i_vars)*beta))),Y*0)
-    # sig_star   <- sig_u*sig_v/sig
-    # inner      <- (lamb*eps_hat)/sig
-    # exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/(1-pnorm(inner)))*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
-    
-    print(total_time <- Sys.time() - start_time)
-    
-    ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula)
-    names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula")
-    
-    return(ret_stuff)} 
-  
-  ###################################################################
-  
-  if(model_name == "THT"){
-    print(start_time <- Sys.time())
-    
-    fn = function(x){
-      for (q in 1:n_x_vars){
-        v             <- q + 3
-        x_x_vec[q]    <- x[v]}
-      
-      eps     <- inefdec_n*(Y  - as.matrix(data_i_vars)%*%x_x_vec)
-      
-      sig_u   <- x[1]
-      sig_v   <- x[2]
-      a       <- x[3]
-      lamb    <- sig_u/sig_v
-      sig     <- sqrt(sig_v^2 + sig_u^2)
-      
-      like  <-  as.numeric(log(     pmax(2*dt(eps, df=a)*
-                                           pt((-eps*lamb/sig)*sqrt((a+1)/(sig^{-2}*eps^2 + a))  ,df=a+1)  ,  eps*0+.Machine$double.eps)))
-      
-      like[like==-Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
-      like[like== Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
-      like[is.nan(like)]       <-  -sqrt(.Machine$double.xmax/length(like))
-      
-      return(-sum(like[is.finite(like)]) ) } 
-    
-    print(start_fun   <- fn(start_v))
-    
-    if(isTRUE(bob == TRUE)){
-      bob1   <- bobyqa(par     = start_v_t , 
-                       fn      = fn,
-                       lower   = c(rep(0.00001,3),rep(-Inf,n_x_vars)) ,
-                       control = list(iprint = 2))
-      
-      start_v_t <- bob1$par
-      
-      # if (isTRUE(start_fun > bob1$fval) ) {start_v_t <- bob1$par}  
-    }
-    
-    # differ  <- 1
-    # 
-    # opt00  <- psoptim(par = start_v_t,
-    #                   fn=fn,
-    #                   lower = c(rep(.00000000001,3), start_v[-c(1:3)] - differ ),
-    #                   upper = c(start_v + differ ),
-    #                   control = list(trace      = 1,
-    #                                  REPORT     = maxit_2/10,
-    #                                  maxit      = maxit_2,
-    #                                  trace.stats= TRUE))
-    # start_v_t <-  opt00$par
-    # 
-    # # if (bob1$fval > opt00$value) {start_v_t <-  opt00$par }
-    
-    opt <- optim(par = start_v_t, 
-                 fn = fn,
-                 lower = c(rep(.Machine$double.eps,3),rep(-Inf,n_x_vars)),
-                 control = list(REPORT = REPORT, trace = trace, pgtol=pgtol),
-                 hessian = TRUE, method = method)
-    
-    out            <- matrix(0,nrow = 3,ncol = length(start_v_t))
-    rownames(out)  <- c("par","st_err","t-val") 
-    colnames(out)  <- c("sigma_u","sigma_v","a",c(names(plm_lm$coefficients))) 
-    
-    st_err     <- if (isTRUE(as.numeric(sum(colMeans(opt$hessian))) == 0 ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
-    t_val      <- opt$par/st_err
-    out[1,]    <- opt$par
-    out[2,]    <- st_err
-    out[3,]    <- t_val
-    
-    print(t(out))
-    # beta  <- opt$par[-c(1:2)]
-    # lamb  <- opt$par[1]
-    # sig   <- opt$par[2]
-    # sig_u <- (lamb*sig) / sqrt(1+lamb^2)
-    # sig_v <- sig_u/lamb
-    # 
-    # eps_hat    <- pmin(inefdec_n*(Y - rowSums(t(t(data_i_vars)*beta))),Y*0)
-    # sig_star   <- sig_u*sig_v/sig
-    # inner      <- (lamb*eps_hat)/sig
-    # exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/(1-pnorm(inner)))*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
-
-    print(total_time <- Sys.time() - start_time)
-    
-    ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula)
-    names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula")
-    
-    return(ret_stuff)}
-  
   else {return(c("This is not a valid command"))}}
 
 

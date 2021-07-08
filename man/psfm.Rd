@@ -10,55 +10,18 @@ psfm(formula, model_name = c("GTRE", "TRE", "PCS", "WMLE", "FD", "GTRE_SEQ1", "G
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-\begin{enumerate}
-   \item{formula}{a symbolic description for the model to be estimated}
-   
-  \item{model_name}{
-%%     ~~Describe \code{model_name} here~~
-}
+  \item{formula}{a symbolic description for the model to be estimated}
+  \item{model_name}{model name}
   \item{data}{a pdata.frame}
-  
-  \item{maxit}{
-HI
-}
-  \item{REPORT}{
-HI
-}
-  \item{trace}{
-HI
-}
-  \item{pgtol}{
-HI
-}
-  \item{individual}{
-HI
-}
-  \item{start_val}{
-HI
-}
-  \item{inefdec}{
-HI
-}
-  \item{gamma}{
-HI
-}
-  \item{z_vars}{
-HI
-}
-  \item{bob}{
-HI
-}
-\end{enumerate}
-}
-\details{
-HI
-}
-\value{HI
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+  \item{maxit}{Maximum number of iterations}
+  \item{REPORT}{reporting}
+  \item{trace}{trace}
+  \item{pgtol}{pgtol}
+  \item{individual}{individual}
+  \item{start_val}{starting value}
+  \item{inefdec}{Production or cost function}
+  \item{gamma}{gamma}
+  \item{bob}{optimization routine}
 }
 \references{
 HI
@@ -70,11 +33,6 @@ David Bernstein
 HI
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{## R Package
 ##To install in R: 
 
@@ -85,12 +43,12 @@ rm(list = ls())
 
 library(sfm)
 
-data_trial <- data_gen(t=10,N=100, rand = 100, 
-                       sig_u = 1,  sig_v = 0.3, 
-                       sig_r = .2, sig_h = .4, 
-                       cons = 0.5, tau = 0.5,
-                       mu= 0.5, beta1 = 0.5,
-                       beta2 = 0.5)
+data_trial <- data_gen_p(t=10,N=100, rand = 100, 
+                         sig_u = 1,  sig_v = 0.3, 
+                         sig_r = .2, sig_h = .4, 
+                         cons = 0.5, tau = 0.5,
+                         mu= 0.5, beta1 = 0.5,
+                         beta2 = 0.5)
 
 ## Trial runs:
 max_fd          <-   psfm(formula = y_fd ~  x_fd,
@@ -148,9 +106,4 @@ cor_mat_ken
 cor_mat_pea
 cor_mat_spe
 summary(effs)
-
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }% use one of  RShowDoc("KEYWORDS")
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

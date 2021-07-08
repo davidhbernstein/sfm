@@ -1,5 +1,5 @@
 data_gen_cs <-
-function(N, rand, sig_u, sig_v, cons, beta1, beta2,a){
+function(N, rand, sig_u, sig_v, cons, beta1, beta2, a, mu){
     
     set.seed(rand)
     
@@ -11,7 +11,9 @@ function(N, rand, sig_u, sig_v, cons, beta1, beta2,a){
     u        <- abs(rnorm(n,0,sig_u))               ## u_it half-normal error term
     v        <- rnorm(    n,0,sig_v)                
     
-    
+    ## Normal truncated normal
+    u_tn     <- rtruncnorm(n=n, mean = mu, sd=sig_u)
+
     ## NHN with Z
     uz         <- rep(0,n)
     z          <- runif(n,1,2)
@@ -43,6 +45,7 @@ function(N, rand, sig_u, sig_v, cons, beta1, beta2,a){
     y_pcs    <-         cons + beta1*x1    + beta2*x2   + v   - u
     y_pcs_z  <-         cons + beta1*x1    + beta2*x2   + v   - uz
     y_pcs_t  <-         cons + beta1*x1    + beta2*x2   + v_t - u_t
+    y_pcs_tn <-         cons + beta1*x1    + beta2*x2   + v   - u_tn
     y_pcs_e  <-         cons + beta1*x1    + beta2*x2   + v   - u_e
     y_pcs_c  <-         cons + beta1*x1    + beta2*x2   + v_c - u_c
     y_pcs_u  <-         cons + beta1*x1    + beta2*x2   + v   - u_u
@@ -51,8 +54,8 @@ function(N, rand, sig_u, sig_v, cons, beta1, beta2,a){
     y_pcs_w  <-         cons + beta1*x1    + beta2*x2   + v +v_c   - u
     
     
-    data_trial <- as.data.frame(cbind(name,  cons,  x1,  x2,  u, uz,   v,  u_t,  v_t,  u_c,  v_c,  u_e , u_u,   y_pcs,  y_pcs_t, y_pcs_e,   y_pcs_c,  y_pcs_u,   y_pcs_z,   y_pcs_w,    z))                     
-    colnames(data_trial) <- c(       "name","cons","x1","x2","u","uz","v","u_t","v_t","u_c","v_c","u_e","u_u" ,"y_pcs","y_pcs_t","y_pcs_e","y_pcs_c","y_pcs_u", "y_pcs_z", "y_pcs_w" , "z")
+    data_trial <- as.data.frame(cbind(name,  cons,  x1,  x2,  u, uz,   v,  u_t,  v_t,  u_c,  v_c,  u_e , u_u,   y_pcs,  y_pcs_t, y_pcs_e,   y_pcs_c,  y_pcs_u,   y_pcs_z,   y_pcs_w,   y_pcs_tn,   z))                     
+    colnames(data_trial) <- c(       "name","cons","x1","x2","u","uz","v","u_t","v_t","u_c","v_c","u_e","u_u" ,"y_pcs","y_pcs_t","y_pcs_e","y_pcs_c","y_pcs_u", "y_pcs_z", "y_pcs_w" ,"y_pcs_tn", "z")
     
     data_rand           <- data.frame(data_trial)
     data_rand$con       <- 1

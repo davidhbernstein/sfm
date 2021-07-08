@@ -12,7 +12,7 @@ function(N, rand, sig_u, sig_v, cons, beta1, beta2, a, mu){
     v        <- rnorm(    n,0,sig_v)                
     
     ## Normal truncated normal
-    u_tn     <- rtruncnorm(n=n, mean = mu, sd=sig_u)
+    u_tn     <- rtruncnorm(n=n, mean = mu, sd=sig_u, a=0)
 
     ## NHN with Z
     uz         <- rep(0,n)

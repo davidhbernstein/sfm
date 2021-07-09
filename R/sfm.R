@@ -178,8 +178,8 @@ sfm <- function(formula,
         
         l1 <- -log(sig^2)/2
         l2 <- -log(2*pi)/2
-        l3 <- -(1/(2*sig^2))*(eps-mu)^2  
-        l4 <-  pnorm(((mu/lam)+eps*lam)/sig,   log.p=TRUE)  
+        l3 <- -(1/(2*sig^2))*(-eps-mu)^2  
+        l4 <-  pnorm(((mu/lam)-eps*lam)/sig,   log.p=TRUE)  
         l5 <- -pnorm((mu/sig)*sqrt(1+lam^(-2)),log.p=TRUE)  
         
         like <- l1 + l2 + l3 + l4 + l5}

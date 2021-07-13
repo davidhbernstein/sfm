@@ -48,7 +48,9 @@ formula_z <- paste(form_parts[[2]], "~",form_parts[[3]][2], sep = "")
 z_vars    <- as.character(gsub(" ", "", noquote(as.character(unlist(form_parts)[[4]])))) 
 z_vars    <- noquote(gsub("+", " ", z_vars, fixed=TRUE))
 z_vars    <- unlist(strsplit(z_vars, " "))
-data_z    <- data_conform(formula = formula_z, data = data)}#else{z_vars <- NULL}
+data_z    <- data_conform(formula = formula_z, data = data)
+if(model_name=="GTRE"){model_name <- "GTRE_Z"}
+if(model_name=="TRE"){model_name <- "TRE_Z"}}#else{z_vars <- NULL}
     
 data_x    <- data_conform(formula = formula_x, data = data)
 

@@ -3,14 +3,9 @@
 \alias{sfm}
 \docType{package}
 \title{
-\packageTitle{sfm}
-}
-\description{
-\packageDescription{sfm}
-}
-\details{
-
-The DESCRIPTION file:
+\packageTitle{sfm}}
+\description{\packageDescription{sfm}}
+\details{The DESCRIPTION file:
 \packageDESCRIPTION{sfm}
 \packageIndices{sfm}
 This package is currently being developed to work in a wide range of applications.   The main functions of the package are "sfm" and "psfm" which can apply different cross-sectional and panel based SFA estimators.
@@ -18,10 +13,8 @@ This package is currently being developed to work in a wide range of application
 \author{
 \packageAuthor{sfm}
 
-Maintainer: \packageMaintainer{sfm}
-}
-\references{Chen Schmidt and Wang 2014 \\ Fillipini and Greene 2016 \\ Wang Ho 2010
-}
+Maintainer: \packageMaintainer{sfm}}
+\references{Chen Schmidt and Wang 2014 \\ Fillipini and Greene 2016 \\ Wang Ho 2010}
 \keyword{ package }
 \seealso{\code{\url{http://www.davidharrybernstein.com/software}{http://www.davidharrybernstein.com/software}}}
 \examples{
@@ -36,8 +29,10 @@ library(sfm)
 
 data("p_data_trial")
 
-gtre_sml   <- psfm(formula    = y_gtre ~ x1 + x2,    
-                   model_name = "GTRE", 
-                   data       = p_data_trial,
-                   individual = "name",
-                   PSopt      = FALSE)
+psfm(formula    = y_gtre ~ x1 + x2,    
+     model_name = "GTRE", 
+     data       = p_data_trial,
+     individual = "name",
+     PSopt      = FALSE)
+}               
+                   

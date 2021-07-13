@@ -38,15 +38,19 @@ sfm <- function(formula,
   form_parts <- base::strsplit(as.character(formula), "|", fixed = TRUE)
   if(isFALSE(unique(grepl( "|", deparse(formula), fixed = TRUE))) ){ formula_x  <- formula
   y_var     <- gsub(" ", "", noquote(as.character( unlist( strsplit( deparse(formula_x), "~", fixed = TRUE)[[1]][1]))))}else{
-    formula_x <- paste(form_parts[[2]], "~",form_parts[[3]][1], sep = "")
-    y_var     <- gsub(" ", "", noquote(as.character( unlist(strsplit( formula_x, "~", fixed = TRUE))[[1]])))}
+  formula_x <- paste(form_parts[[2]], "~",form_parts[[3]][1], sep = "")
+  y_var     <- gsub(" ", "", noquote(as.character( unlist(strsplit( formula_x, "~", fixed = TRUE))[[1]])))}
   
   if(length(unlist(form_parts))>3){
     formula_z <- paste(form_parts[[2]], "~",form_parts[[3]][2], sep = "")
     z_vars    <- as.character(gsub(" ", "", noquote(as.character(unlist(form_parts)[[4]])))) 
     z_vars    <- noquote(gsub("+", " ", z_vars, fixed=TRUE))
     z_vars    <- unlist(strsplit(z_vars, " "))
-    data_z    <- data_conform(formula = formula_z, data = data)}#else{z_vars <- NULL}
+    data_z    <- data_conform(formula = formula_z, data = data)
+    if(model_name=="NHN"){model_name <- "NHN_Z"}
+    if(model_name=="NE"){model_name <- "NE_Z"}
+    if(model_name %in% c("THT","NTN","CHC","NU")){print("Currently building this functionality") 
+    return(c("Currently building this functionality"))}}
   
   data_x    <- data_conform(formula = formula_x, data = data)
   

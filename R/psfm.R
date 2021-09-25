@@ -85,7 +85,7 @@ plm_gtre       <- plm(formula_x,  data,effect = "individual",model = "random" )
 beta_hat       <- if(isTRUE(intercept==0)){plm(formula_x ,data,effect = "individual")$coefficients[c(x_vars_vec)]} else{plm_gtre$coefficients[-c(1)]}
 alpha_hat      <- ranef(plm_gtre)
 epsilon_hat    <- plm_gtre$residuals
-beta_0_st      <- if(isTRUE(intercept==0)) {NA} else{plm_gtre$coefficients[c(1)]}
+beta_0_st      <- if(isTRUE(intercept==0)){NA}else{plm_gtre$coefficients[c(1)]}
 beta_se        <- as.data.frame(summary(plm_gtre)[1])$coefficients.Std..Error}}
     
 data         <- data[rownames(data_x),]
@@ -142,7 +142,8 @@ model_name %in% c("TRE_Z","GTRE_Z","TRE","GTRE","GTRE_SEQ1","GTRE_SEQ2") ){
     sigma_h        <- sigma_r*sfa_alp[1]                        
     beta_0         <- beta_0_st + exp_u +exp_eta
     lambda         <- sigma_u/sigma_v
-    sigma          <- sqrt(sigma_u^2 + sigma_v^2)}
+    sigma          <- sqrt(sigma_u^2 + sigma_v^2)
+    if(model_name %in% c("GTRE_Z","TRE_Z")){beta_0  <- beta_0_st + exp_u}}
     
 ####################################################   
     
@@ -287,7 +288,7 @@ fn_1 = function(x){
       
       start_v  <- opt$par
       
-      st_err     <- if (isTRUE(as.numeric(sum(colMeans(opt$hessian))) == 0 ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
+      st_err     <- if (isTRUE(any(opt$hessian==0) ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
       t_val      <- opt$par/st_err
       out[1,]    <- opt$par
       out[2,]    <- st_err
@@ -448,15 +449,15 @@ fn_1 = function(x){
       print(start_time <- Sys.time())
       
       delta          <- rep(0.1,length(z_vars))
-      beta_0         <- beta_0_st + exp_u
       
-      start_v        <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_r,sigma_h,beta_hat,delta))} else{unname(c(sigma_v,sigma_r,sigma_h,beta_0,beta_hat,delta))}
-      
+      if (isTRUE(is.numeric(start_val))) {start_v <- start_val} else{
+      start_v        <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_r,sigma_h,beta_hat,delta))} else{unname(c(sigma_v,sigma_r,sigma_h,beta_0,beta_hat,delta))} }
+    
       out            <- matrix(0,nrow = 3,ncol = length(start_v))
       rownames(out)  <- c("par","st_err","t-val") 
-      colnames(out)  <- c("sigv","sigr","sigh",colnames(data_x),z_vars) 
+      colnames(out)  <- if(model_name=="GTRE_Z"){c("sigv","sigr","sigh",colnames(data_x),z_vars)} else{c("sigv","sigr",colnames(data_x),z_vars)} 
       
-      if(model_name == "TRE_Z"){
+      if( isTRUE(model_name == "TRE_Z" & isFALSE(start_val)) ){
         out      <- out[,-c(4)]  
         start_v  <- start_v[-c(4)]}
       
@@ -561,7 +562,7 @@ fn_1 = function(x){
       if(isTRUE(PSopt==TRUE)){
         set.seed(1234)
         
-        differ  <- 1 
+        differ  <- 10 
         
         if(model_name == "TRE_Z"){   
           lower1   <- c(rep(.Machine$double.eps,2) , start_v[-c(1:2)] -differ   )  
@@ -582,10 +583,10 @@ fn_1 = function(x){
                                         maxit          = maxit))
         
         if(isTRUE(start_feval > opt00$value )) {start_v <- opt00$par} else{print("no improvement from psoptim")}
-        
+        print(start_v)
       }
       
-      differ  <- .8
+      differ  <- 1
       
       if(model_name == "TRE_Z"){   
         lower1   <- c(rep(.Machine$double.eps,2) , start_v[-c(1:2)] -differ   )  
@@ -605,7 +606,7 @@ fn_1 = function(x){
                    method  = method)  
       
       
-      st_err     <- if (isTRUE(as.numeric(sum(colMeans(opt$hessian))) == 0 ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
+      st_err     <- if (isTRUE(any(opt$hessian==0) ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
       t_val      <- opt$par/st_err
       out[1,]    <- opt$par
       out[2,]    <- st_err
@@ -896,7 +897,7 @@ fn_1 = function(x){
       
       #cor(exp_u_hat,exp(-data$u))   
       
-      st_err     <- if (isTRUE(as.numeric(sum(colMeans(opt$hessian))) == 0 ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
+      st_err     <- if (isTRUE(any(opt$hessian==0) ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
       t_val      <- opt$par/st_err
       out[1,]    <- opt$par
       out[2,]    <- st_err
@@ -1092,7 +1093,7 @@ fn_1 = function(x){
       exp_u_hat  <- pmin(exp_u_hat, 1)
       
       
-      st_err     <- if (isTRUE(as.numeric(sum(colMeans(opt$hessian))) == 0)){ rep(NA,length(opt$par)) }   else{sqrt(diag(qr.solve(opt$hessian)))} 
+      st_err     <- if (isTRUE(any(opt$hessian==0))){ rep(NA,length(opt$par)) }   else{sqrt(diag(qr.solve(opt$hessian)))} 
       t_val      <- opt$par/st_err 
       out[1,]        <- opt$par
       out[2,]        <- st_err
@@ -1166,7 +1167,7 @@ fn_1 = function(x){
     
     if(model_name == "GTRE_SEQ2") {
       start_time <- Sys.time()
-      ## Sequential Method following 1995 paper by 
+      ## Sequential Method following 1995 paper  
       ## take second and third moments of alpha_hat and epsilon_hat
       alp_2m <- mean(alpha_hat^2)
       alp_3m <- min(0,mean(alpha_hat^3))

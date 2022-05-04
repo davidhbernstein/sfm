@@ -1,196 +1,28 @@
-psfm <-
-  function(formula, 
-           model_name = c("TRE_Z","GTRE_Z","TRE",  "GTRE",
-                          "WMLE","FD","GTRE_SEQ1","GTRE_SEQ2"), 
-           data, 
-           maxit=1000, 
-           REPORT=1,
-           trace=3, 
-           pgtol=0, 
-           individual,
-           halton_num=NULL, 
-           start_val=FALSE, 
-           inefdec=TRUE, 
-           gamma=FALSE,
-           bob=TRUE,
-           PSopt=FALSE){
+psfm <- function(formula, 
+                 model_name   = c("TRE_Z","GTRE_Z","TRE","GTRE","WMLE","FD","GTRE_SEQ1","GTRE_SEQ2"), 
+                 data, 
+                 maxit.bobyqa = 100,
+                 maxit.psoptim= 10,
+                 maxit.optim  = 10,
+                 REPORT       = 1,
+                 trace        = 3, 
+                 pgtol        = 0, 
+                 individual,
+                 halton_num   = NULL,
+                 start_val    = FALSE,
+                 gamma        = FALSE,
+                 PSopt        = FALSE,
+                 bob          = TRUE,
+                 optHessian   = TRUE,
+                 inefdec      = TRUE, 
+                 Method       = "L-BFGS-B"){
     
-    ## lm code for data   
-    data_conform <- function (formula, data,na.action, method = "qr", 
-                              model = TRUE, x = FALSE, y = FALSE, qr = TRUE, singular.ok = TRUE, 
-                              contrasts = NULL, offset, ...) 
-    {
-      ret.x <- x
-      ret.y <- y
-      cl <- match.call()
-      mf <- match.call(expand.dots = FALSE)
-      m <- match(c("formula", "data", "subset", "weights", "na.action", 
-                   "offset"), names(mf), 0L)
-      mf <- mf[c(1L, m)]
-      mf$drop.unused.levels <- TRUE
-      mf[[1L]] <- quote(stats::model.frame)
-      mf <- eval(mf, parent.frame())
-      if (method == "model.frame")return(mf) else if (method != "qr") 
-        warning(gettextf("method = '%s' is not supported. Using 'qr'", method), domain = NA)
-      mt <- attr(mf, "terms")
-      y <- model.response(mf, "numeric")
-      x <- model.matrix(mt, mf, contrasts)
-      return(x)}
-    
-form_parts <- base::strsplit(as.character(formula), "|", fixed = TRUE)
-if(isFALSE(unique(grepl( "|", deparse(formula), fixed = TRUE))) ){ formula_x  <- formula
-y_var     <- gsub(" ", "", noquote(as.character( unlist( strsplit( deparse(formula_x), "~", fixed = TRUE)[[1]][1]))))}else{
-formula_x <- paste(form_parts[[2]], "~",form_parts[[3]][1], sep = "")
-y_var     <- gsub(" ", "", noquote(as.character( unlist(strsplit( formula_x, "~", fixed = TRUE))[[1]])))}
-    
-if(length(unlist(form_parts))>3){
-formula_z <- paste(form_parts[[2]], "~",form_parts[[3]][2], sep = "")
-z_vars    <- as.character(gsub(" ", "", noquote(as.character(unlist(form_parts)[[4]])))) 
-z_vars    <- noquote(gsub("+", " ", z_vars, fixed=TRUE))
-z_vars    <- unlist(strsplit(z_vars, " "))
-data_z    <- data_conform(formula = formula_z, data = data)
-if(model_name=="GTRE"){model_name <- "GTRE_Z"}
-if(model_name=="TRE"){model_name <- "TRE_Z"}}#else{z_vars <- NULL}
-    
-data_x    <- data_conform(formula = formula_x, data = data)
+data_proc(  formula,   data, model_name, individual, inefdec)
+start_panel(formula_x, data, model_name, start_val, intercept, x_vars_vec)
+data_proc2(data, data_x, fancy_vars, fancy_vars_z, data_z, y_var, x_vars_vec, halton_num, individual, N, model_name)
 
-N              <- length(unique(data[,c(individual)]))
-method         <- "L-BFGS-B"
-    
-intercept      <- if(isTRUE(grepl(-1, gsub("[[:space:]]", "",as.character(formula_x))))) {0} else{1}
-inefdec_n      <- if(isTRUE(inefdec) ) {1} else{-1}
-inefdec_TF     <- if(isTRUE(inefdec) ) {TRUE} else{FALSE}
-    
-x_vars_vec     <- if(model_name %in% c("WMLE","FD") & intercept==1){colnames(data_x)[-c(1)]}else {colnames(data_x)}
-n_x_vars       <- length(x_vars_vec)
-x_vars         <- x_vars_vec
-x_x_vec        <- rep(0,length= n_x_vars)
-fancy_vars   <- setdiff(colnames(data_x),colnames(data))
-fancy_vars_z <- NULL 
-
-if(length(unlist(form_parts))>3){    
-intercept_z    <- if(isTRUE(grepl(-1, gsub("[[:space:]]", "",as.character(formula_z))))) {0} else{1}
-z_vars_vec     <- if(model_name %in% c("WMLE","FD") & intercept_z==1){colnames(data_z)[-c(1)]}else {colnames(data_z)}
-n_z_vars       <- length(z_vars_vec)
-z_vars         <- z_vars_vec
-z_z_vec        <- rep(0,length= n_z_vars)
-fancy_vars_z   <- setdiff(colnames(data_z),colnames(data))}
-    
-## Starting values for all random effects regressions and fd/wmle (to avoid conflict with plm)
-if (isFALSE(is.numeric(start_val))){
-if(model_name %in% c("WMLE","FD")){
-plm_wmle       <- plm(formula_x,  data,effect = "individual",model = "within" )
-plm_fd         <- plm(formula_x,  data,effect = "individual",model = "pooling")} else{
-plm_gtre       <- plm(formula_x,  data,effect = "individual",model = "random" )
-beta_hat       <- if(isTRUE(intercept==0)){plm(formula_x ,data,effect = "individual")$coefficients[c(x_vars_vec)]} else{plm_gtre$coefficients[-c(1)]}
-alpha_hat      <- ranef(plm_gtre)
-epsilon_hat    <- plm_gtre$residuals
-beta_0_st      <- if(isTRUE(intercept==0)){NA}else{plm_gtre$coefficients[c(1)]}
-beta_se        <- as.data.frame(summary(plm_gtre)[1])$coefficients.Std..Error}}
-    
-data         <- data[rownames(data_x),]
-    
-if (isTRUE(length(fancy_vars)>0)) { data_inter   <- cbind(  data, data_x[,fancy_vars]  )
-colnames(data_inter) <- c(colnames(data),fancy_vars)
-data  <- data_inter} else  {}
-
-if (isTRUE(length(fancy_vars_z)>0)) { data_inter   <- cbind(  data, data_z[,fancy_vars_z]  )
-colnames(data_inter) <- c(colnames(data),fancy_vars_z)
-data  <- data_inter} else  {}
-    
-## Basic PCS code for regression on intercept
-pcs_c  <- function(Y, inefdec=TRUE){
-## Random starting values
-      sigma_u        <- runif(n=1, min = 0.04, max = 1)
-      sigma_v        <- runif(n=1, min = 0.04, max = 1) 
-      beta_0         <- runif(n=1, min = 0.04, max = 1) 
-      
-      lambda         <- sigma_u/sigma_v
-      sigma          <- sqrt(sigma_u^2 + sigma_v^2)
-      
-      start_v        <- unname(c(lambda,sigma,beta_0))
-      inefdec_n      <- if(isTRUE(inefdec) ){1}else{-1}
-      
-      fn = function(x){
-        
-        eps     <- inefdec_n*(Y - x[3])
-        
-        like  <- sum( log( (2/x[2])  * 
-                             pmax(dnorm(eps/x[2]),eps*0+.Machine$double.eps)*  
-                             pmax(pnorm(-eps*x[1]/x[2]),eps*0+.Machine$double.eps)   ))
-        return(-like[is.finite(like)])}  
-      
-      
-      opt <- optim(par = start_v, 
-                   fn = fn,
-                   lower = c(rep(0.01,2),-Inf),
-                   control = list(maxit = 300, REPORT = 1, trace = 0, pgtol=0),
-                   hessian = FALSE, 
-                   method = "L-BFGS-B")
-      
-      return(list(opt, Y))}
-
-if (isFALSE(is.numeric(start_val)) & 
-model_name %in% c("TRE_Z","GTRE_Z","TRE","GTRE","GTRE_SEQ1","GTRE_SEQ2") ){
-    sfa_eps        <- pcs_c(Y  = as.numeric(epsilon_hat))[[1]]$par
-    sfa_alp        <- pcs_c(Y  = as.numeric(alpha_hat  ))[[1]]$par
-    exp_eta        <- sfa_alp[3]
-    exp_u          <- sfa_eps[3]
-    sigma_v        <- sqrt(sfa_eps[2]^2/ (1 + sfa_eps[1]^2))    
-    sigma_u        <- sigma_v*sfa_eps[1]                        
-    sigma_r        <- sqrt(sfa_alp[2]^2/ (1 + sfa_alp[1]^2))        
-    sigma_h        <- sigma_r*sfa_alp[1]                        
-    beta_0         <- beta_0_st + exp_u +exp_eta
-    lambda         <- sigma_u/sigma_v
-    sigma          <- sqrt(sigma_u^2 + sigma_v^2)
-    if(model_name %in% c("GTRE_Z","TRE_Z")){beta_0  <- beta_0_st + exp_u}}
-    
-####################################################   
-    
-    if(model_name %in% c("GTRE","TRE") ){
-      print(start_time <- Sys.time()) 
-      
-      if (isTRUE(is.numeric(start_val))) {start_v <- start_val} else{
-      start_v <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,sigma_r,sigma_h,beta_hat))} else{unname(c(lambda,sigma,sigma_r,sigma_h,beta_0,beta_hat))} }
-      
-      out           <- matrix(0,nrow = 3,ncol = length(start_v))
-      rownames(out) <- c("par","st_err","t-val") 
-      if(model_name == "TRE"  & isTRUE(is.numeric(start_val))){colnames(out)    <- c("lambda","sig","sig_r",colnames(data_x))}else{
-      colnames(out) <- c("lambda","sig","sig_r","sig_h",colnames(data_x))}
-      
-      if(model_name == "TRE" & isFALSE(is.numeric(start_val))){
-        out      <- out[,-c(4)]  
-        start_v  <- start_v[-c(4)]
-      }
-      
-      print("rounded starting values: ")
-      print(round(start_v,2))
-      
-      if (isTRUE(is.numeric(halton_num))) {R <- halton_num}else{
-      R              <- ceiling(sqrt(nrow(data)))+100 }       ## Integral reps  
-      R_H            <- randtoolbox::halton(R,2,normal = TRUE)  ## halton seqs
-      
-      indiv           <- noquote(as.vector(unique(data[,c(individual)])))
-      t               <- rep(0, N)
-      data_i          <- as.list(rep(0,N))
-      Y               <- as.list(rep(0,N))
-      eps             <- as.list(rep(0,N))
-      data_i_vars     <- as.list(rep(0,N))
-      R_h1            <- as.list(rep(0,N))
-      R_h2            <- as.list(rep(0,N))
-      
-      for (ii in 1:N) {
-        data_i[[ii]]  <-  data[which(data[,c(individual)]==indiv[ii]),]
-        t[ii]         <-  nrow(data_i[[ii]])
-        R_h1[[ii]]    <-  t(matrix(rep(R_H[,1],t[[ii]]),R,t[[ii]]))
-        R_h2[[ii]]    <-  abs(t(matrix(rep(R_H[,2],t[[ii]]),R,t[[ii]])))
-        
-        
-        Y[[ii]]       <-  matrix(rep(data_i[[ii]][,y_var],R),t[[ii]],R)
-        
-        data_i_vars[[ii]]   <- data.frame(data_i[[ii]][,c(x_vars_vec)] )}
-      
-      
+if(model_name %in% c("GTRE","TRE") ){
+  
 fn_1 = function(x){
           
    if(model_name == "GTRE"){x_x_vec       <- x[5:as.numeric(n_x_vars + 4)]}
@@ -219,81 +51,30 @@ fn_1 = function(x){
                        )), .Machine$double.xmin))
             return(-prod_vec_n)}
           
-          fn1_apply                         <- unlist(lapply(1:N, fn1))
-          fn1_apply[is.nan(fn1_apply)]      <- sqrt(.Machine$double.xmax/length(x))
-          fn1_apply[is.infinite(fn1_apply)] <- sqrt(.Machine$double.xmax/length(x))
+fn1_apply                         <- unlist(lapply(1:N, fn1))
+fn1_apply[is.nan(fn1_apply)]      <- sqrt(.Machine$double.xmax/length(x))
+fn1_apply[is.infinite(fn1_apply)] <- sqrt(.Machine$double.xmax/length(x))
           
-          return( sum( fn1_apply[is.finite(fn1_apply)] ) ) }
+return( sum( fn1_apply[is.finite(fn1_apply)] ) ) }
+
+start.time()      
+lower.start(start_v, model_name, differ=3)
+opt.bobyqa(fn=fn_1, start_v=start_v, lower.bobyqa=lower1, maxit.bobyqa=maxit.bobyqa, bob.TF=bob)
       
-      start_feval   <-  fn_1(start_v)      
-      print(paste("function:  ", start_feval, sep = ""))    
-      print(paste("R:  ",        R,           sep = ""))
-      
-      if(model_name == "TRE"){
-        lower1   <- c(rep(0.0000001,3) , start_v[-c(1:3)] - 0.3*abs(start_v[-c(1:3)]))}
-      
-      if(model_name == "GTRE"){   
-        lower1   <- c(rep(0.0000001,4) , start_v[-c(1:4)] - 0.3*abs(start_v[-c(1:4)]))}
-      
-      if(isTRUE(bob==TRUE)){
-        bob1   <- bobyqa(par = start_v, fn = fn_1,
-                         lower   = lower1 , 
-                         control = list(iprint = 2, 
-                                        maxfun = max(10000,maxit)))
-        
-        if(isTRUE(start_feval > bob1$fval )) {start_v <- bob1$par} else{print("no improvement from bobyqa")}
-      }
-      
-      differ  <- 2
-      
-      if(model_name == "TRE"){ lower1   <- c(rep(.0000001,3) , start_v[-c(1:3)] -differ)}
-      
-      if(model_name == "GTRE"){lower1   <- c(rep(.0000001,4) , start_v[-c(1:4)] -differ)}
-      
-      if(isTRUE(PSopt==TRUE)){
-        set.seed(1234)
-        
-        opt00 <- psoptim(par     = start_v, 
-                         fn      = fn_1,
-                         lower   = lower1 , 
-                         upper   = c(start_v+differ),
-                         control = list(trace          = 1,
-                                        REPORT         = maxit/10,
-                                        trace.stats    = TRUE,
-                                        maxit          = maxit))
-        
-        if(isTRUE(start_feval > opt00$value )) {start_v <- opt00$par} else{print("no improvement from psoptim")}
-      }
-      
-      
-      differ  <- .5
-      
-      if(model_name == "TRE"){   
-        lower1   <- c(rep(.Machine$double.eps,3) , start_v[-c(1:3)] -differ   )  
-      }
-      
-      if(model_name == "GTRE"){   
-        lower1   <- c(rep(.Machine$double.eps,4) , start_v[-c(1:4)] -differ   )  
-      }      
-      
-      opt <- optim(par = start_v, fn = fn_1,
-                   lower   = lower1 , 
-                   upper   = c(start_v+differ),
-                   control = list(maxit = maxit, 
-                                  REPORT = REPORT, 
-                                  trace = trace, 
-                                  pgtol=pgtol),   
-                   hessian = TRUE,
-                   method = method)
-      
-      start_v  <- opt$par
-      
-      st_err     <- if (isTRUE(any(opt$hessian==0) ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
-      t_val      <- opt$par/st_err
-      out[1,]    <- opt$par
-      out[2,]    <- st_err
-      out[3,]    <- t_val
-      print(t(out))
+lower.start(start_v, model_name, differ=2)
+opt.psoptim(fn=fn_1, start_v=start_v, lower.psoptim=lower1,upper.psoptim=upper1, maxit.psoptim, psopt.TF=PSopt)
+
+lower.start(start_v, model_name, differ=0.5)
+opt.optim(fn = fn_1, start_v = start_v, lower.optim =lower1 ,upper.optim=upper1, 
+          maxit.optim=maxit.optim, opt.TF=TRUE, method=Method, optHessian= TRUE)
+
+end.time(start_time)      
+st_err     <- if (isTRUE(any(opt$hessian==0))  | optHessian ==FALSE ){ rep(NA,length(opt$par)) }   else{sqrt(pmax(diag(solve(opt$hessian)),0))}
+t_val      <- opt$par/st_err
+out[1,]    <- opt$par
+out[2,]    <- st_err
+out[3,]    <- t_val
+print(t(out))
       
       ## TE Measurements : GTRE       
       if(model_name == "GTRE"){ 
@@ -355,28 +136,21 @@ fn_1 = function(x){
           }}
         
         
-        t_cum      <-   c(cumsum(t))
-        t_exp      <-   as.list(rep(0,n))
-        e_i_exp    <-   as.list(rep(0,n))
-        A_exp      <-   as.list(rep(0,n))
-        SIG_exp    <-   as.list(rep(0,n))
-        VEE_exp    <-   as.list(rep(0,n))
-        LAM_exp    <-   as.list(rep(0,n))
-        ARR_exp    <-   as.list(rep(0,n))
-        res_d_exp  <-   as.list(rep(0,n))
+t_cum      <-   c(cumsum(t))
+t_exp      <-   e_i_exp    <-   A_exp  <- SIG_exp <- VEE_exp <- LAM_exp <- ARR_exp <- res_d_exp  <-   as.list(rep(0,n))
         
-        for(m in 1:N){
-          B  <- t_cum[m]
-          A  <- B +1 - t[m] 
-          t_exp[A:B]     <- rep(t[m],  t[m])
-          e_i_exp[A:B]   <- rep(e_i[m],t[m])
-          A_exp[A:B]     <- rep(A[m],  t[m])
-          SIG_exp[A:B]   <- rep(SIG[m],t[m])
-          VEE_exp[A:B]   <- rep(VEE[m],t[m])
-          LAM_exp[A:B]   <- rep(LAM[m],t[m])
-          ARR_exp[A:B]   <- rep(ARR[m],t[m])
-          res_d_exp[A:B] <- rep(res_d[m],t[m])
-        }
+for(m in 1:N){
+B  <- t_cum[m]
+A  <- B +1 - t[m] 
+t_exp[A:B]     <- rep(t[m],  t[m])
+e_i_exp[A:B]   <- rep(e_i[m],t[m])
+A_exp[A:B]     <- rep(A[m],  t[m])
+SIG_exp[A:B]   <- rep(SIG[m],t[m])
+VEE_exp[A:B]   <- rep(VEE[m],t[m])
+LAM_exp[A:B]   <- rep(LAM[m],t[m])
+ARR_exp[A:B]   <- rep(ARR[m],t[m])
+res_d_exp[A:B] <- rep(res_d[m],t[m])
+}
         
         res_n_t_fn <- function(i){ptmvnorm(  lowerx=rep(0, t_exp[[i]]+1), upperx=rep(Inf, t_exp[[i]]+1),
                                              mean= as.numeric(ARR_exp[[i]] %*% e_i_exp[[i]] + LAM_exp[[i]]%*% new_t_exp[[i]] ), 
@@ -419,47 +193,35 @@ fn_1 = function(x){
           A  <- B +1 - t[m] 
           r_hat_m_exp[A:B] <- rep(r_hat_m[m],t[m])}
         
-        eps_hat    <- pmin(inefdec_n*(data[,y_var] - rowSums(t(t(data[,c(x_vars_vec)])*beta)) -r_hat_m_exp ),data[,y_var]*0)
-        sig_star   <- sig_u*sig_v/sig
-        inner      <- (lamb*eps_hat)/sig
-        exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/(1-pnorm(inner)))*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
-        
-        U <- exp_u_hat
-      }
+eps_hat    <- pmin(inefdec_n*(data[,y_var] - rowSums(t(t(data[,c(x_vars_vec)])*beta)) -r_hat_m_exp ),data[,y_var]*0)
+sig_star   <- sig_u*sig_v/sig
+inner      <- (lamb*eps_hat)/sig
+exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/(1-pnorm(inner)))*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
+U          <- exp_u_hat}
       
-      #cor(U,exp(-p_data_trial$u))
-      #cor(H,exp(-unique(p_data_trial$h) ))
+#cor(U,exp(-p_data_trial$u))
+#cor(H,exp(-unique(p_data_trial$h) ))
+
+if(model_name == "GTRE"){      
+ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, U, H)
+names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","U","H")}
+if(model_name == "TRE"){      
+ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, U)
+names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","U")}
       
-      end_time   <- Sys.time()
-      total_time <- end_time - start_time
-      print(total_time)
+return(ret_stuff)}   
+  
+if(model_name %in% c("GTRE_Z","TRE_Z") ){
+
+delta          <- rep(0.1,length(z_vars))
       
-      if(model_name == "GTRE"){      
-        ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, U, H)
-        names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","U","H")}
-      if(model_name == "TRE"){      
-        ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, U)
-        names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","U")}
-      
-      return(ret_stuff)}   
-    
-    ####################################################    
-    
-    if(model_name %in% c("GTRE_Z","TRE_Z") ){
-      print(start_time <- Sys.time())
-      
-      delta          <- rep(0.1,length(z_vars))
-      
-      if (isTRUE(is.numeric(start_val))) {start_v <- start_val} else{
-      start_v        <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_r,sigma_h,beta_hat,delta))} else{unname(c(sigma_v,sigma_r,sigma_h,beta_0,beta_hat,delta))} }
-    
-      out            <- matrix(0,nrow = 3,ncol = length(start_v))
-      rownames(out)  <- c("par","st_err","t-val") 
-      colnames(out)  <- if(model_name=="GTRE_Z"){c("sigv","sigr","sigh",colnames(data_x),z_vars)} else{c("sigv","sigr",colnames(data_x),z_vars)} 
-      
-      if( isTRUE(model_name == "TRE_Z" & isFALSE(start_val)) ){
-        out      <- out[,-c(4)]  
-        start_v  <- start_v[-c(4)]}
+if(isTRUE(is.numeric(start_val))){start_v <- start_val}
+if(isTRUE(model_name == "GTRE_Z") & isFALSE(is.numeric(start_val))){start_v  <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_r,sigma_h,beta_hat,delta))} else{unname(c(sigma_v,sigma_r,sigma_h,beta_0,beta_hat,delta))} }
+if(isTRUE(model_name == "TRE_Z") & isFALSE(is.numeric(start_val))){start_v   <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_r,beta_hat,delta))} else{unname(c(sigma_v,sigma_r,beta_0,beta_hat,delta))}}
+
+out            <- matrix(0,nrow = 3,ncol = length(start_v))
+rownames(out)  <- c("par","st_err","t-val") 
+colnames(out)  <- if(model_name=="GTRE_Z"){c("sigv","sigr","sigh",colnames(data_x),z_vars)} else{c("sigv","sigr",colnames(data_x),z_vars)} 
       
       if (isTRUE(is.numeric(start_val))) {start_v <- start_val}
       
@@ -469,149 +231,92 @@ fn_1 = function(x){
       
       indiv           <- noquote(as.vector(unique(data[,c(individual)])))
       t               <- rep(0, N)
-      data_i          <- as.list(rep(0,N))
-      Y               <- as.list(rep(0,N))
-      eps             <- as.list(rep(0,N))
-      data_i_vars     <- as.list(rep(0,N))
-      data_z_vars     <- as.list(rep(0,N))
-      R_h1            <- as.list(rep(0,N))
-      R_h2            <- as.list(rep(0,N))
+      data_i <- Y <- eps <- data_i_vars <- data_z_vars <- R_h1 <- R_h2 <- as.list(rep(0,N))
       
       for (ii in 1:N) {
-        data_i[[ii]]  <-  data[which(data[,c(individual)]==indiv[ii]),]
-        t[ii]         <-  nrow(data_i[[ii]])
-        R_h1[[ii]]    <-  t(matrix(rep(R_H[,7],t[[ii]]),R,t[[ii]]))
-        R_h2[[ii]]    <-  abs(t(matrix(rep(R_H[,8],t[[ii]]),R,t[[ii]])))
-        
-        Y[[ii]]       <-  matrix(rep(data_i[[ii]][,y_var],R),t[[ii]],R)
+        data_i[[ii]]        <-  data[which(data[,c(individual)]==indiv[ii]),]
+        t[ii]               <-  nrow(data_i[[ii]])
+        R_h1[[ii]]          <-  t(matrix(rep(R_H[,7],t[[ii]]),R,t[[ii]]))
+        R_h2[[ii]]          <-  abs(t(matrix(rep(R_H[,8],t[[ii]]),R,t[[ii]])))
+        Y[[ii]]             <-  matrix(rep(data_i[[ii]][,y_var],R),t[[ii]],R)
         data_i_vars[[ii]]   <- data.frame(data_i[[ii]][,c(x_vars_vec)] )
         data_z_vars[[ii]]   <- data.frame(data_i[[ii]][,c(z_vars)]     )} 
       
-      differ<- 1.5
+fn <-  function(x){
+if(model_name == "GTRE_Z"){      
+x_x_vec    <- x[4:as.numeric(n_x_vars + 3)]
+
+for (qq in 1:n_z_vars){
+v              <- qq  + 3 + n_x_vars
+z_z_vec[qq]    <- x[v]}
+}
       
-    fn <-  function(x){
-      
-      if(model_name == "GTRE_Z"){      
-          for (q in 1:n_x_vars){
-            v             <- q + 3
-            x_x_vec[q]    <- x[v]
-          }
+if(model_name == "TRE_Z"){  
+x_x_vec    <- x[3:as.numeric(n_x_vars + 2)]
+
+for (qq in 1:n_z_vars){
+v              <- qq  + 2 + n_x_vars
+z_z_vec[qq]    <- x[v]} }
           
-          for (qq in 1:n_z_vars){
-            v              <- qq  + 3 + n_x_vars
-            z_z_vec[qq]    <- x[v]} }
-      
-      if(model_name == "TRE_Z"){  
-        for (q in 1:n_x_vars){
-          v             <- q + 2
-          x_x_vec[q]    <- x[v]
-        }
+fn1 = function(ii){ 
+  if(model_name == "GTRE_Z"){
+   eps[[ii]]     <- Y[[ii]]  - x[2]*R_h1[[ii]]  + x[3]*R_h2[[ii]] * inefdec_n}
+  
+  if(model_name == "TRE_Z"){   
+   eps[[ii]]     <- Y[[ii]]  - x[2]*R_h1[[ii]]   }
+  
+  for (qq in 1:n_x_vars) {
+    eps[[ii]] <- eps[[ii]] - x_x_vec[qq]*matrix(rep(data_i_vars[[ii]][,qq],R),t[[ii]],R)  
+  }
+  eps[[ii]] <- inefdec_n*eps[[ii]]
+  
+  sigma_u_fun    <- sqrt(exp(as.matrix(data_z_vars[[ii]])%*%z_z_vec))
+  sigma_v_fun    <- x[1]
+  sigma_fun      <- sqrt(sigma_v_fun^2 + sigma_u_fun^2)
+  lamb_fun       <- sigma_u_fun/sigma_v_fun     
+  
+  prod_vec_n  <- log(mean(colProds((2/matrix(rep(sigma_fun,R),t[[ii]],R))* 
+                 dnorm(eps[[ii]]/matrix(rep(sigma_fun,R),t[[ii]],R))*   
+       pmax(pnorm(-eps[[ii]]*matrix(rep(lamb_fun,R),t[[ii]],R)/matrix(rep(sigma_fun,R),t[[ii]],R)),eps[[ii]]*0+.Machine$double.eps))))
+  
+  return(-prod_vec_n)
+}
+
+fn1_apply  <- unlist(lapply(1:N, fn1))
+
+fn1_apply[which(fn1_apply==Inf)]   <-  (.Machine$double.xmax)^.1
+fn1_apply[which(fn1_apply==-Inf)]  <- -(.Machine$double.xmax)^.1
+
+return( sum( fn1_apply[is.finite(fn1_apply)] ) )} 
+
+start.time()
+differ<- 1.5
+if(model_name == "TRE_Z"){lower1   <- c(rep(.Machine$double.eps,2) , start_v[-c(1:2)] -differ)}
+if(model_name == "GTRE_Z"){lower1   <- c(rep(.Machine$double.eps,3) , start_v[-c(1:3)] -differ)}    
         
-        for (qq in 1:n_z_vars){
-          v              <- qq  + 2 + n_x_vars
-          z_z_vec[qq]    <- x[v]} }
-          
-          fn1 = function(ii){ 
-            if(model_name == "GTRE_Z"){
-             eps[[ii]]     <- Y[[ii]]  - x[2]*R_h1[[ii]]  + x[3]*R_h2[[ii]] * inefdec_n}
-            
-            if(model_name == "TRE_Z"){   
-             eps[[ii]]     <- Y[[ii]]  - x[2]*R_h1[[ii]]   }
-            
-            for (qq in 1:n_x_vars) {
-              eps[[ii]] <- eps[[ii]] - x_x_vec[qq]*matrix(rep(data_i_vars[[ii]][,qq],R),t[[ii]],R)  
-            }
-            eps[[ii]] <- inefdec_n*eps[[ii]]
-            
-            sigma_u_fun    <- sqrt(exp(as.matrix(data_z_vars[[ii]])%*%z_z_vec))
-            sigma_v_fun    <- x[1]
-            sigma_fun      <- sqrt(sigma_v_fun^2 + sigma_u_fun^2)
-            lamb_fun       <- sigma_u_fun/sigma_v_fun     
-            
-            prod_vec_n  <- log(mean(colProds((2/matrix(rep(sigma_fun,R),t[[ii]],R))* 
-                                               dnorm(eps[[ii]]/matrix(rep(sigma_fun,R),t[[ii]],R))*   
-                                               pmax(pnorm(-eps[[ii]]*matrix(rep(lamb_fun,R),t[[ii]],R)/matrix(rep(sigma_fun,R),t[[ii]],R)),eps[[ii]]*0+.Machine$double.eps))))
-            
-            return(-prod_vec_n)
-          }
-          
-          fn1_apply  <- unlist(lapply(1:N, fn1))
-          
-          fn1_apply[which(fn1_apply==Inf)]   <-  (.Machine$double.xmax)^.1
-          fn1_apply[which(fn1_apply==-Inf)]  <- -(.Machine$double.xmax)^.1
-          
-          return( sum( fn1_apply[is.finite(fn1_apply)] ) )}   
-    
-        lower1 <- c(rep(.Machine$double.eps,3) , start_v[-c(1:3)] -differ   )          
+opt.bobyqa(fn=fn, start_v=start_v, lower.bobyqa=lower1, maxit.bobyqa=maxit.bobyqa, bob.TF=bob)      
+
+differ<- 10
+if(model_name == "TRE_Z"){lower1   <- c(rep(.Machine$double.eps,2) , start_v[-c(1:2)] -differ)}
+if(model_name == "GTRE_Z"){lower1   <- c(rep(.Machine$double.eps,3) , start_v[-c(1:3)] -differ)}  
+
+opt.psoptim(fn=fn, start_v, lower.psoptim=lower1, upper.psoptim=c(start_v+differ), 
+            maxit.psoptim=maxit.psoptim, psopt.TF=PSopt)
       
-      
-      print("function:  ")    
-      print(start_feval   <-  fn(start_v))
-      
-      
-      if(isTRUE(bob==TRUE)){
-        bob1   <- bobyqa(par = start_v, fn = fn,
-                         lower = lower1,
-                         control = list(iprint = 2,maxfun=maxit ))
-        
-        if(isTRUE(start_feval > bob1$fval )) {start_v <- bob1$par} else{print("no improvement from bobyqa")}
-      }
-      
-      start_feval   <-  fn(start_v)
-      
-      if(isTRUE(PSopt==TRUE)){
-        set.seed(1234)
-        
-        differ  <- 10 
-        
-        if(model_name == "TRE_Z"){   
-          lower1   <- c(rep(.Machine$double.eps,2) , start_v[-c(1:2)] -differ   )  
-        }
-        
-        if(model_name == "GTRE_Z"){   
-          lower1   <- c(rep(.Machine$double.eps,3) , start_v[-c(1:3)] -differ   )  
-        }
-        
-        
-        opt00 <- psoptim(par    = start_v, 
-                         fn      = fn,
-                         lower   = lower1,
-                         upper   = c(start_v+differ),
-                         control = list(trace          = 1,
-                                        REPORT         = maxit/10,
-                                        trace.stats    = TRUE,
-                                        maxit          = maxit))
-        
-        if(isTRUE(start_feval > opt00$value )) {start_v <- opt00$par} else{print("no improvement from psoptim")}
-        print(start_v)
-      }
-      
-      differ  <- 1
-      
-      if(model_name == "TRE_Z"){   
-        lower1   <- c(rep(.Machine$double.eps,2) , start_v[-c(1:2)] -differ   )  
-      }
-      
-      if(model_name == "GTRE_Z"){   
-        lower1   <- c(rep(.Machine$double.eps,3) , start_v[-c(1:3)] -differ   )  
-      }
-      
-      opt <- optim(par      = start_v, fn = fn,
-                   lower   = lower1,
-                   control = list(maxit = maxit, 
-                                  REPORT = REPORT, 
-                                  trace = trace, 
-                                  pgtol=pgtol),   
-                   hessian = TRUE,
-                   method  = method)  
-      
-      
-      st_err     <- if (isTRUE(any(opt$hessian==0) ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
-      t_val      <- opt$par/st_err
-      out[1,]    <- opt$par
-      out[2,]    <- st_err
-      out[3,]    <- t_val
-      print(t(out))
+differ  <- 1
+if(model_name == "TRE_Z"){lower1   <- c(rep(.Machine$double.eps,2) , start_v[-c(1:2)] -differ )}
+if(model_name == "GTRE_Z"){lower1  <- c(rep(.Machine$double.eps,3) , start_v[-c(1:3)] -differ)}
+
+opt.optim(fn = fn, start_v = start_v, lower.optim =lower1 ,upper.optim=c(start_v+differ), 
+          maxit.optim=maxit.optim, opt.TF=TRUE, method=Method, optHessian= TRUE)
+
+end.time(start_time)      
+st_err     <- if (isTRUE(any(opt$hessian==0) | optHessian ==FALSE ) ){ rep(NA,length(opt$par)) }   else{sqrt(pmax(diag(solve(opt$hessian)),0))}
+t_val      <- opt$par/st_err
+out[1,]    <- opt$par
+out[2,]    <- st_err
+out[3,]    <- t_val
+print(t(out))
       
       ## TE Measurements       
       if(model_name == "GTRE_Z"){         
@@ -741,141 +446,66 @@ fn_1 = function(x){
         U          <- pmin(U, 1)
         
       }      
-      
-      
-      end_time   <- Sys.time()
-      
-      total_time <- end_time - start_time 
-      print(total_time)
-      
-      if(model_name == "GTRE_Z"){      
-        ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, U, H)
-        names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","U","H")}
-      if(model_name == "TRE_Z"){      
-        ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, U)
-        names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","U")
-        }
-        
-      return(ret_stuff)}    
-    
-    ####################################################   
 
-    if(model_name == "WMLE"){
-      print(start_time <- Sys.time())
-      ## Starting values
-      beta_hat       <- plm_wmle$coefficients[c(x_vars_vec)]
-      epsilon_hat    <- plm_wmle$residuals
-      beta_se        <- as.data.frame(summary(plm_wmle)[1])$coefficients.Std..Error[-c(1)]
-      sfa_eps        <- pcs_c(Y  = as.numeric(epsilon_hat))[[1]]$par
-      exp_u          <- sfa_eps[3]
-      sigma_v        <- sqrt(sfa_eps[2]^2/ (1 + sfa_eps[1]^2))    #coef(sfa_eps,extraPar=TRUE)[c("sigmaV")]
-      sigma_u        <- sigma_v*sfa_eps[1]                        #coef(sfa_eps,extraPar=TRUE)[c("sigmaU")]
-      lambda         <- sigma_u/sigma_v
-      sigma          <- sqrt(sigma_u^2 + sigma_v^2)
+if(model_name == "GTRE_Z"){      
+ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, U, H)
+names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","U","H")}
+if(model_name == "TRE_Z"){      
+ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, U)
+names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","U")}
+return(ret_stuff)}    
+
+if(model_name == "WMLE"){
+start.wmle(formula_x, data, model_name, start_val, intercept, x_vars_vec, gamma, individual, N, y_var, plm_wmle)
+
+like.wmle  <-  function(x){ 
+x_x_vec    <- x[3:as.numeric(n_x_vars + 2)]  
+    
+fn1 = function(i){ 
       
-      start_v        <- unname(c(lambda,sigma,beta_hat))
-      start_v[1]     <- if(gamma==TRUE) {sigma_u^2/sigma^2} else{start_v[1]}
+eps_t    <- Y[[i]]  
       
-      if (isTRUE(is.numeric(start_val))) {start_v <- start_val} 
+for (qq in 1:n_x_vars) {
+eps_t  <- eps_t - x_x_vec[qq]*demean(as.numeric(data_i_vars[[i]][,qq])) }
+eps_t  <- eps_t*inefdec_n
+eps_t1 <- eps_t[1:t[[i]]-1]
       
-      out            <- matrix(0,nrow = 3,ncol = length(start_v))
-      rownames(out)  <- c("par","st_err","t-val") 
-      colnames(out)  <- c("lambda","sig",c(names(plm_wmle$coefficients))  ) 
-      colnames(out)[1] <- if(gamma==TRUE) {"gamma"} else{"lambda"}
+if(gamma==FALSE)   {E_t      <- ((x[1]*x[1])/t[[i]])*one_t[[i]]%*%t(one_t[[i]])}
+else               {E_t      <- ( (x[1]/(1-x[1])) /t[[i]] )*one_t[[i]]%*%t(one_t[[i]])}
+E_t1     <- (1/t[[i]])*one_t1[[i]]%*%t(one_t1[[i]])
+l1       <- dmnorm(x= eps_t1,                  mean = rep(0,t[[i]]-1), varcov = x[2]*x[2]*(I_t1[[i]] - E_t1 ))
+if(gamma==FALSE)   {l2       <- pmnorm(x= -(x[1]/x[2])*eps_t,  mean = rep(0,t[[i]]),       varcov =  I_t[[i]] + E_t )}
+else               {l2       <- pmnorm(x= -(sqrt(x[1]/(1-x[1]))/x[2])*eps_t,  mean = rep(0,t[[i]]),  varcov =  I_t[[i]] + E_t )}
+ 
+prod_vec_n  <- log(l1) + log(l2[1])  ## Log likelihood   
+return(-prod_vec_n)
+}
+fn1_apply  <- unlist(lapply(1:N, fn1))
+return(sum( fn1_apply[is.finite(fn1_apply)] ))}  
+
+start.time()
+
+differ <- 2
+opt.bobyqa(fn=like.wmle, start_v=start_v, lower.bobyqa=c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars)), 
+           maxit.bobyqa=maxit.bobyqa, bob.TF=bob)
+
+opt.psoptim(fn=like.wmle, start_v, lower.psoptim=c(rep(.Machine$double.eps,2), start_v[-c(1:2)]-differ),
+            upper.psoptim=c(start_v+differ), maxit.psoptim=maxit.psoptim, psopt.TF=PSopt)
+
+opt.optim(fn = like.wmle, start_v = start_v, lower.optim =c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars)),
+          upper.optim=c(start_v+differ), maxit.optim=maxit.optim, opt.TF=TRUE, method=Method, optHessian= TRUE)
+
+end.time(start_time)      
+beta             <- opt$par[-c(1:2)]  ## estimate the r_i's and then e(exp(u)|eps)'s 
+lamb             <- opt$par[1]
+sig              <- opt$par[2]
+sig_u            <- (lamb*sig) / sqrt(1+lamb^2)
+sig_v            <- sig_u/lamb
+Y_mean           <- rep(0,N)
+X_mean           <- matrix(0,N,ncol = length(x_vars_vec))
+colnames(X_mean) <- x_vars_vec
       
-      indiv           <- noquote(as.vector(unique(data[,c(individual)])))
-      t               <- rep(0, N)
-      data_i          <- as.list(rep(0,N))
-      Y               <- as.list(rep(0,N))
-      eps             <- as.list(rep(0,N))
-      data_i_vars     <- as.list(rep(0,N))
-      
-      one_t           <- as.list(rep(0,N))
-      I_t             <- as.list(rep(0,N))
-      one_t1          <- as.list(rep(0,N))
-      I_t1            <- as.list(rep(0,N))
-      
-      
-      for (ii in 1:N) {
-        data_i[[ii]]   <-  data[which(data[,c(individual)]==indiv[ii]),]
-        t[ii]          <-  nrow(data_i[[ii]])
-        Y[[ii]]        <-  demean(as.numeric(data_i[[ii]][,y_var]))
-        data_i_vars[[ii]]   <- data.frame(data_i[[ii]][,c(x_vars_vec)] )
-        
-        one_t[[ii]]    <- rep(1,t[[ii]])
-        I_t[[ii]]      <- diag(t[[ii]]) 
-        one_t1[[ii]]   <- rep(1,t[[ii]]-1)
-        I_t1[[ii]]     <- diag(t[[ii]]-1) 
-      }
-      
-      if(gamma==TRUE){upper <- c(1,rep(Inf,n_x_vars+1))} else{upper <- NA}  
-      
-      fn  <-  function(x){ 
-        
-        for (q in 1:n_x_vars){
-          v             <- q + 2
-          x_x_vec[q]    <- x[v]}
-        
-        
-        
-        fn1 = function(i){ 
-          
-          eps_t    <- Y[[i]]  
-          
-          for (qq in 1:n_x_vars) {
-            eps_t <- eps_t - x_x_vec[qq]*demean(as.numeric(data_i_vars[[i]][,qq]))  
-          }
-          
-          eps_t    <- eps_t*inefdec_n
-          eps_t1   <- eps_t[1:t[[i]]-1]
-          
-          if(gamma==FALSE)   {E_t      <- ((x[1]*x[1])/t[[i]])*one_t[[i]]%*%t(one_t[[i]])}
-          else               {E_t      <- ( (x[1]/(1-x[1])) /t[[i]] )*one_t[[i]]%*%t(one_t[[i]])}
-          
-          
-          E_t1     <- (1/t[[i]])*one_t1[[i]]%*%t(one_t1[[i]])
-          
-          l1       <- dmnorm(x= eps_t1,                  mean = rep(0,t[[i]]-1), varcov = x[2]*x[2]*(I_t1[[i]] - E_t1 ))
-          
-          if(gamma==FALSE)   {l2       <- pmnorm(x= -(x[1]/x[2])*eps_t,  mean = rep(0,t[[i]]),       varcov =  I_t[[i]] + E_t )}
-          else               {l2       <- pmnorm(x= -(sqrt(x[1]/(1-x[1]))/x[2])*eps_t,  mean = rep(0,t[[i]]),       varcov =  I_t[[i]] + E_t )}
-          
-          ## Log likelihood    
-          prod_vec_n  <- log(l1) + log(l2[1]) 
-          return(-prod_vec_n)
-        }
-        
-        fn1_apply  <- unlist(lapply(1:N, fn1))
-        
-        return(sum( fn1_apply[is.finite(fn1_apply)] )  )}
-      
-      if(isTRUE(bob==TRUE & start_val==FALSE)){
-        bob   <- bobyqa(par = start_v, fn = fn,
-                        lower = c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars)) ,
-                        control = list(iprint = 2, 
-                                       maxfun = max(10000,maxit)  ))
-        start_v  <- bob$par
-      }
-      if (isTRUE(is.numeric(start_val))) {start_v <- start_val}
-      print(start_v)     
-      
-      
-      
-      opt <-  optim(par=start_v, fn = fn, lower = c(rep(.Machine$double.eps,2),rep(-Inf,n_x_vars)),upper=upper,
-                    control = list(maxit = maxit, REPORT = REPORT, trace = trace, pgtol=pgtol),
-                    hessian = TRUE, method = method)
-      
-      ## estimate the r_i's and then e(exp(u)|eps)'s 
-      beta             <- opt$par[-c(1:2)]
-      lamb             <- opt$par[1]
-      sig              <- opt$par[2]
-      sig_u            <- (lamb*sig) / sqrt(1+lamb^2)
-      sig_v            <- sig_u/lamb
-      Y_mean           <- rep(0,N)
-      X_mean           <- matrix(0,N,ncol = length(x_vars_vec))
-      colnames(X_mean) <- x_vars_vec
-      
-      for (ii in 1:N) {
+for (ii in 1:N) {
         data_i[[ii]]  <- data[which(data[,c(individual)]==indiv[ii]),]
         Y_mean[ii]    <- mean(as.numeric(data_i[[ii]][,y_var]))
         X_mean[ii,]   <- colMeans(data.frame(data_i[[ii]][,c(x_vars_vec)] ))
@@ -890,33 +520,26 @@ fn_1 = function(x){
         A  <- B +1 - t[m] 
         r_hat_m_exp[A:B] <- rep(r_hat_m[m],t[m])}
       
-      eps_hat    <- pmin(inefdec_n*(data[,y_var] - rowSums(t(t(data[,c(x_vars_vec)])*beta))- r_hat_m_exp),data[,y_var]*0)
-      sig_star   <- sig_u*sig_v/sig
-      inner      <- (lamb*eps_hat)/sig
-      exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/(1-pnorm(inner)))*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
+eps_hat    <- pmin(inefdec_n*(data[,y_var] - rowSums(t(t(data[,c(x_vars_vec)])*beta))- r_hat_m_exp),data[,y_var]*0)
+sig_star   <- sig_u*sig_v/sig
+inner      <- (lamb*eps_hat)/sig
+exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/(1-pnorm(inner)))*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
       
-      #cor(exp_u_hat,exp(-data$u))   
+#cor(exp_u_hat,exp(-data$u))   
       
-      st_err     <- if (isTRUE(any(opt$hessian==0) ) ){ rep(NA,length(opt$par)) }   else{sqrt(diag(solve(opt$hessian)))}
-      t_val      <- opt$par/st_err
-      out[1,]    <- opt$par
-      out[2,]    <- st_err
-      out[3,]    <- t_val
-      end_time   <- Sys.time()
-      total_time <- end_time - start_time
-      print(total_time)
-      print(t(out))
-      return(list(t(out),c(opt),total_time,start_v,r_hat_m,exp_u_hat ,model_name,formula, data))
-      
-      
-    }
+st_err     <- if (isTRUE(any(opt$hessian==0))  | optHessian ==FALSE ){ rep(NA,length(opt$par)) }   else{sqrt(pmax(diag(solve(opt$hessian)),0))}
+t_val      <- opt$par/st_err
+out[1,]    <- opt$par
+out[2,]    <- st_err
+out[3,]    <- t_val
+print(t(out))
+return(list(t(out),c(opt),total_time,start_v,r_hat_m,exp_u_hat ,model_name,formula, data))
+}
     
-    ####################################################   
-    
-    if(model_name == "FD"){
-      print(start_time <- Sys.time())
+if(model_name == "FD"){
+start.time()
       
-      if (isTRUE(is.numeric(start_val))) {start_v <- start_val} else{
+if (isTRUE(is.numeric(start_val))) {start_v <- start_val} else{
         
         beta_hat         <- plm_fd$coefficients[c(x_vars_vec)]
         epsilon_hat      <- plm_fd$residuals
@@ -963,7 +586,7 @@ fn_1 = function(x){
           diag(SIGMA[[ii]][-1,  ])  <- -1
           diag(SIGMA[[ii]][  ,-1])  <- -1}}
       
-      fn <- function(x){ 
+like.fd <- function(x){ 
         
         for (q in 1:n_x_vars){
           v             <- q + 3
@@ -1002,173 +625,116 @@ fn_1 = function(x){
         fn1_apply  <- unlist(lapply(1:N, fn1))
         
         return( sum( fn1_apply[is.finite(fn1_apply)] ) )}
+
+differ  <- 2            
+
+opt.bobyqa(fn=like.fd,  start_v=start_v, lower.bobyqa=c(rep(0.000001,2) , rep(-Inf,n_x_vars+1), rep(-Inf,length(z_vars))), 
+           maxit.bobyqa=maxit.bobyqa, bob.TF=bob)      
+
+opt.psoptim(fn=like.fd, start_v=start_v, lower.psoptim=c(rep(.Machine$double.eps,2), start_v[-c(1:2)]- differ),
+            upper.psoptim=c(start_v+differ), maxit.psoptim, psopt.TF=PSopt)
+
+opt.optim(fn = like.fd, start_v = start_v, lower.optim =c(rep(0.000001,2) , rep(-Inf,n_x_vars+1), rep(-Inf,length(z_vars))),
+          upper.optim=c(start_v+differ),maxit.optim=maxit.optim, opt.TF=TRUE, method=Method, optHessian= TRUE)
+
+end.time(start_time)
+## TE Measurements: ui's
+NX    <- n_x_vars + 3
+NZ1   <- n_x_vars + 4
+NZ2   <- n_x_vars + n_z_vars + 3
+beta  <- opt$par[c(4:NX)]
+delta <- opt$par[c(NZ1:NZ2)]
+sigu2 <- opt$par[1]
+sigv2 <- opt$par[2]
+mu    <- opt$par[3]
+u_hat <- rep(0, sum(t))
+h_hat <- exp(as.matrix(data.frame(subset(data,select = z_vars)))%*%delta)
+
+for (i in 1:N) {
+for (tt in 1:t[i]) {
+eps_t     <- diff(Y[[i]], lag = 1) 
+eps_h     <- rep(0, t[i]-1)
+
+for (qq in 1:n_x_vars) {
+m         <- 3 + qq
+eps_t     <- eps_t - opt$par[m] * diff(as.numeric(data_i_vars[[i]][,qq]), lag = 1)}
+
+for (qq in 1:n_z_vars) {
+m         <- 3 + length(n_x_vars) + qq 
+eps_h     <- eps_h + opt$par[m] * diff(as.numeric(data_z_vars[[i]][,qq]), lag = 1)}
+
+eps_t     <- eps_t*inefdec_n
+SIG       <- sigv2*SIGMA[[i]]
+sig_star2 <- (t(eps_h) %*% qr.solve(SIG) %*% eps_h  + (1/sigu2))^-1
+mu_star   <- (  (mu/sigu2) - t(eps_t) %*% qr.solve(SIG) %*% eps_h  )*sig_star2 
+
+num        <- if(i>1) { cumsum(t)[i-1]  + tt } else {tt}
+u_hat[num]   <- h_hat[num] * (mu_star + (sqrt(sig_star2)*dnorm(mu_star/sqrt(sig_star2)) / max(pnorm(mu_star/sqrt(sig_star2)),.Machine$double.eps)   ) ) 
+}}
       
-      start_feval   <-  fn(start_v)
-      print(paste("function:  ", start_feval, sep = ""))
+exp_u_hat  <- exp(-u_hat)
+exp_u_hat  <- pmax(exp_u_hat, 0)
+exp_u_hat  <- pmin(exp_u_hat, 1)
       
-      if(isTRUE(PSopt==TRUE)){
-        set.seed(1234)
-        
-        differ  <- 2
-        
-        opt00 <- psoptim(par     = start_v, 
-                         fn      = fn,
-                         lower   = c(rep(.Machine$double.eps,2), start_v[-c(1:2)]- differ) , 
-                         upper   = c(start_v+differ),
-                         control = list(trace          = 1,
-                                        REPORT         = maxit/10,
-                                        trace.stats    = TRUE,
-                                        maxit          = maxit))
-        
-        if(isTRUE(start_feval > opt00$value )) {start_v <- opt00$par} else{print("no improvement from psoptim")}
-        
-      }
+st_err     <- if (isTRUE(any(opt$hessian==0))  | optHessian ==FALSE){ rep(NA,length(opt$par)) }   else{sqrt(diag(qr.solve(opt$hessian)))} 
+t_val      <- opt$par/st_err 
+out[1,]        <- opt$par
+out[2,]        <- st_err
+out[3,]        <- t_val
+print(t(out))
+return(list(t(out),c(opt),total_time,start_v,model_name,formula, u_hat, h_hat, exp_u_hat, data)) 
+}
+
+if(model_name == "GTRE_SEQ1") {
+start.time()
       
-      print(start_feval   <-  fn(start_v))
-      
-      if(isTRUE(bob==TRUE)){
-        bob1   <- bobyqa(par = start_v, fn = fn,
-                         c(rep(0.000001,2) , rep(-Inf,n_x_vars+1), rep(-Inf,length(z_vars))) ,
-                         control = list(iprint = 2, 
-                                        maxfun = max(10000,maxit)))
-        
-        if(isTRUE(start_feval > bob1$fval )) {start_v <- bob1$par} else{print("no improvement from bobyqa")}
-      }    
-      
-      print(start_v)     
-      
-      opt <-  optim(par=start_v,  fn = fn,
-                    lower = c(rep(0.000001,2) , rep(-Inf,n_x_vars+1), rep(-Inf,length(z_vars))),
-                    control = list(maxit = maxit, 
-                                   REPORT = REPORT, 
-                                   trace = trace, 
-                                   pgtol=pgtol),
-                    hessian = TRUE, method = method)
-      
-      print(opt$par)  
-      
-      ## TE Measurements: ui's
-      NX    <- n_x_vars + 3
-      NZ1   <- n_x_vars + 4
-      NZ2   <- n_x_vars + n_z_vars + 3
-      
-      beta   <- opt$par[c(4:NX)]
-      delta  <- opt$par[c(NZ1:NZ2)]
-      
-      sigu2   <- opt$par[1]
-      sigv2   <- opt$par[2]
-      mu      <- opt$par[3]
-      
-      u_hat    <- rep(0, sum(t))
-      
-      h_hat    <- exp(as.matrix(data.frame(subset(data,select = z_vars)))%*%delta)
-      
-      
-      for (i in 1:N) {
-        for (tt in 1:t[i]) {
-          eps_t    <- diff(Y[[i]], lag = 1) 
-          eps_h    <- rep(0, t[i]-1)
-          
-          for (qq in 1:n_x_vars) {
-            m     <- 3 + qq
-            eps_t <- eps_t - opt$par[m] * diff(as.numeric(data_i_vars[[i]][,qq]), lag = 1)}
-          
-          for (qq in 1:n_z_vars) {
-            m     <- 3 + length(n_x_vars) + qq 
-            eps_h <- eps_h + opt$par[m] * diff(as.numeric(data_z_vars[[i]][,qq]), lag = 1)}
-          
-          eps_t     <- eps_t*inefdec_n
-          SIG       <- sigv2*SIGMA[[i]]
-          sig_star2 <- (t(eps_h) %*% qr.solve(SIG) %*% eps_h  + (1/sigu2))^-1
-          mu_star   <- (  (mu/sigu2) - t(eps_t) %*% qr.solve(SIG) %*% eps_h  )*sig_star2 
-          
-          num        <- if(i>1) { cumsum(t)[i-1]  + tt } else {tt}
-          u_hat[num]   <- h_hat[num] * (mu_star + (sqrt(sig_star2)*dnorm(mu_star/sqrt(sig_star2)) / max(pnorm(mu_star/sqrt(sig_star2)),.Machine$double.eps)   ) ) 
-          
-        }}
-      
-      
-      exp_u_hat  <- exp(-u_hat)
-      exp_u_hat  <- pmax(exp_u_hat, 0)
-      exp_u_hat  <- pmin(exp_u_hat, 1)
-      
-      
-      st_err     <- if (isTRUE(any(opt$hessian==0))){ rep(NA,length(opt$par)) }   else{sqrt(diag(qr.solve(opt$hessian)))} 
-      t_val      <- opt$par/st_err 
-      out[1,]        <- opt$par
-      out[2,]        <- st_err
-      out[3,]        <- t_val
-      end_time       <- Sys.time()
-      total_time     <- end_time - start_time
-      print(total_time)
-      print(t(out))
-      return(list(t(out),c(opt),total_time,start_v,model_name,formula, u_hat, h_hat, exp_u_hat, data)) 
-      
-    }
-    
-    ####################################################   
-    
-    if(model_name == "GTRE_SEQ1") {
-      start_time <- Sys.time()
-      
-      ## Sequential Method  
-      sfa_eps        <- sfa(epsilon_hat   ~1, ineffDecrease = inefdec_TF)
-      sfa_alp        <- sfa(alpha_hat     ~1, ineffDecrease = inefdec_TF)
-      
-      exp_eta        <- sfa_alp$mleParam[c(1)]
-      exp_u          <- sfa_eps$mleParam[c(1)]
-      sigma_u        <- coef(sfa_eps,extraPar=TRUE)[c("sigmaU")]
-      sigma_v        <- coef(sfa_eps,extraPar=TRUE)[c("sigmaV")]
-      sigma_r        <- coef(sfa_alp,extraPar=TRUE)[c("sigmaU")]
-      sigma_h        <- coef(sfa_alp,extraPar=TRUE)[c("sigmaV")]
-      beta_0         <- beta_0_st + exp_u +exp_eta
-      Lambda         <- sigma_u/sigma_v
-      Sigma          <- sqrt(sigma_u^2 + sigma_v^2)
-      
+## Sequential Method  
+      sfa_eps       <- sfa(epsilon_hat   ~1, ineffDecrease = inefdec_TF)
+      sfa_alp       <- sfa(alpha_hat     ~1, ineffDecrease = inefdec_TF)
+      exp_eta       <- sfa_alp$mleParam[c(1)]
+      exp_u         <- sfa_eps$mleParam[c(1)]
+      sigma_u       <- coef(sfa_eps,extraPar=TRUE)[c("sigmaU")]
+      sigma_v       <- coef(sfa_eps,extraPar=TRUE)[c("sigmaV")]
+      sigma_r       <- coef(sfa_alp,extraPar=TRUE)[c("sigmaU")]
+      sigma_h       <- coef(sfa_alp,extraPar=TRUE)[c("sigmaV")]
+      beta_0        <- beta_0_st + exp_u +exp_eta
+      Lambda        <- sigma_u/sigma_v
+      Sigma         <- sqrt(sigma_u^2 + sigma_v^2)
       sigma_se_r    <- NA
       sigma_r_se    <- NA
       sigma_h_se    <- NA
       lambda_se_r   <- NA
       beta_0_se     <- NA 
-      
       gamma_uv      <- coef(sfa_eps,extraPar=TRUE)[c("gamma")]
       sigmaSq_uv    <- coef(sfa_eps,extraPar=TRUE)[c("sigmaSq")]
       gamma_hr      <- coef(sfa_alp,extraPar=TRUE)[c("gamma")]
       sigmaSq_hr    <- coef(sfa_alp,extraPar=TRUE)[c("sigmaSq")]
+      gamma_uv_se   <- summary(sfa_eps)[[25]][c("gamma"),2]
+      sigmaSq_uv_se <- summary(sfa_eps)[[25]][c("sigmaSq"),2]
+      gamma_hr_se   <- summary(sfa_alp)[[25]][c("gamma"),2]
+      sigmaSq_hr_se <- summary(sfa_alp)[[25]][c("sigmaSq"),2]
       
-      gamma_uv_se      <- summary(sfa_eps)[[25]][c("gamma"),2]
-      sigmaSq_uv_se    <- summary(sfa_eps)[[25]][c("sigmaSq"),2]
-      gamma_hr_se      <- summary(sfa_alp)[[25]][c("gamma"),2]
-      sigmaSq_hr_se    <- summary(sfa_alp)[[25]][c("sigmaSq"),2]
-      
-      other_parms    <- as.matrix(c(Lambda,Sigma,beta_0))
+      other_parms            <- as.matrix(c(Lambda,Sigma,beta_0))
       rownames(other_parms)  <- c("lambda","sigma","beta_0")
-      start_v        <- unname(c(gamma_uv,sigmaSq_uv,gamma_hr,sigmaSq_hr,beta_hat))
+      start_v                <- unname(c(gamma_uv,sigmaSq_uv,gamma_hr,sigmaSq_hr,beta_hat))
+      out                    <- matrix(0,nrow = 3,ncol = length(start_v))
+      rownames(out)          <- c("par","st_err","t-val") 
+      colnames(out) <- if(isTRUE(intercept==0)) {c("gamma_uv","sigmaSq_uv","gamma_hr","sigmaSq_hr",colnames(data_x) )} else{c("gamma_uv","sigmaSq_uv","gamma_hr","sigmaSq_hr",colnames(data_x)[-c(1)] )}
       
-      out            <- matrix(0,nrow = 3,ncol = length(start_v))
-      rownames(out)  <- c("par","st_err","t-val") 
-      colnames(out)  <- if(isTRUE(intercept==0)) {c("gamma_uv","sigmaSq_uv","gamma_hr","sigmaSq_hr",colnames(data_x) )} else{c("gamma_uv","sigmaSq_uv","gamma_hr","sigmaSq_hr",colnames(data_x)[-c(1)] )}
-      
+      end.time(start_time)
       st_err     <- rep(NA,ncol(out)) 
       st_err     <- if(isTRUE(intercept==0)) {c(gamma_uv_se,sigmaSq_uv_se,gamma_hr_se,sigmaSq_hr_se,summary(plm_gtre)$coefficients[,2])} else{c(gamma_uv_se,sigmaSq_uv_se,gamma_hr_se,sigmaSq_hr_se,summary(plm_gtre)$coefficients[-c(1),2])}
       t_val      <- start_v/st_err
       out[1,]    <- start_v
       out[2,]    <- st_err
       out[3,]    <- t_val
-      end_time   <- Sys.time()
-      total_time <- end_time - start_time
-      
-      print(total_time)
-      print(t(out))
-      return(list(t(out),total_time,other_parms,model_name,formula, data))
-    }
-    
-    ####################################################   
-    
-    if(model_name == "GTRE_SEQ2") {
-      start_time <- Sys.time()
-      ## Sequential Method following 1995 paper  
-      ## take second and third moments of alpha_hat and epsilon_hat
+print(t(out))
+return(list(t(out),total_time,other_parms,model_name,formula, data))}
+
+if(model_name == "GTRE_SEQ2") {
+start.time()
+## Sequential Method following 1995 paper  
+## take second and third moments of alpha_hat and epsilon_hat
       alp_2m <- mean(alpha_hat^2)
       alp_3m <- min(0,mean(alpha_hat^3))
       eps_2m <- mean(epsilon_hat^2)
@@ -1227,7 +793,7 @@ fn_1 = function(x){
       gamma_hr_se   <- sqrt(d_gamma_d_m2_alp^2*var_2m_alp  + d_gamma_d_m3_alp^2* var_3m_alp + d_gamma_d_m2_alp*d_gamma_d_m3_alp*cov_23m_alp     )
       
       start_v        <- if(is.na(beta_0_st)) {unname(c(gamma_uv,sigmaSq_uv,gamma_hr,sigmaSq_hr,beta_hat))} else {unname(c(gamma_uv,sigmaSq_uv,gamma_hr,sigmaSq_hr,beta_0,beta_hat))}
-      
+      end.time(start_time)
       out            <- matrix(0,nrow = 3,ncol = length(start_v))
       rownames(out)  <- c("par","st_err","t-val") 
       colnames(out)  <- if(isTRUE(intercept==0)) {c("gamma_uv","sigmaSq_uv","gamma_hr","sigmaSq_hr",colnames(data_x) )} else{c("gamma_uv","sigmaSq_uv","gamma_hr","sigmaSq_hr",colnames(data_x) )}
@@ -1238,9 +804,7 @@ fn_1 = function(x){
       out[1,]    <- start_v
       out[2,]    <- st_err
       out[3,]    <- t_val
-      end_time   <- Sys.time()
-      total_time <- end_time - start_time
-      
+
       ## look at individual sigmas 
       Sigma_u <- sqrt(gamma_uv*sigmaSq_uv)    
       Sigma_v <- sqrt((1-gamma_uv)*sigmaSq_uv) 
@@ -1251,14 +815,8 @@ fn_1 = function(x){
       
       other_parms    <- as.matrix(c(Sigma_u,Sigma_v,Sigma_h, Sigma_r, Lambda, Sigma))
       rownames(other_parms) <- c("sigma_u","sigma_v","sigma_h", "sigma_r","lambda","sigma")
-      
-      print(total_time)
       print(t(out))
       return(list(t(out),total_time,other_parms,model_name,formula, data))
     }
     
-    ####################################################      
-    
-    else {return(c("This is not a valid command"))}
-    
-  }
+else {return(c("This is not a valid command"))}}

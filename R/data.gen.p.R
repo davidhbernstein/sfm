@@ -1,5 +1,5 @@
 data_gen_p <-
-function(t, N, rand, sig_u, sig_v, sig_r, sig_h, cons, tau, mu, beta1, beta2){
+function(t, N, rand, sig_u, sig_v, sig_r, sig_h, cons, tau=0.5, mu=0, beta1, beta2){
     
     set.seed(rand)
     

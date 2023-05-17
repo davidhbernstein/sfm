@@ -533,7 +533,9 @@ out[1,]    <- opt$par
 out[2,]    <- st_err
 out[3,]    <- t_val
 print(t(out))
-return(list(t(out),c(opt),total_time,start_v,r_hat_m,exp_u_hat ,model_name,formula, data))
+ret_stuff <- list(t(out),c(opt),total_time,start_v,r_hat_m,exp_u_hat ,model_name,formula, data)
+names(ret_stuff) <- c("out","opt","total_time","start_v","r_hat_m","exp_u_hat","model_name","formula","data")
+return(ret_stuff)
 }
     
 if(model_name == "FD"){
@@ -682,7 +684,9 @@ out[1,]        <- opt$par
 out[2,]        <- st_err
 out[3,]        <- t_val
 print(t(out))
-return(list(t(out),c(opt),total_time,start_v,model_name,formula, u_hat, h_hat, exp_u_hat, data)) 
+ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, u_hat, h_hat, exp_u_hat, data)
+names(ret_stuff) <- c("out","opt","total_time","start_v","model_name","formula", "u_hat", "h_hat", "exp_u_hat", "data")
+return(ret_stuff) 
 }
 
 if(model_name == "GTRE_SEQ1") {

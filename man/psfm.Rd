@@ -52,13 +52,17 @@ data_trial <- data_gen_p(t=10,N=100, rand = 100,
                          sig_r = .2, sig_h = .4, 
                          cons = 0.5, beta1 = 0.5,
                          beta2 = 0.5)
-
 ## Trial runs:
 max_fd          <-   psfm(formula = y_fd ~  x_fd|z_fd,
                           model_name = "FD",  
                           data=data_trial, 
                           individual = "name")
 
+max_tre_z   <-  psfm(formula    = y_tre_z ~ x1 +x2| z_gtre, 
+                     model_name = "TRE",                    ## "TRE_Z" also works
+                     data       = p.data,
+                     individual = "name",
+                     PSopt      = TRUE)
 
 max_gtre         <-   psfm(formula = y_gtre ~ x1+x2,    
                            model_name = "GTRE", 

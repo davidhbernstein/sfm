@@ -44,16 +44,16 @@ The results give the model parameter estimates in the classic $\lambda$-$\sigma$
 We may be interested in plotting the densities of these efficiency scores: 
 
 ```{r setup 3}
-plot(density(p.gtre_sml[[7]]),main="Density of Transient TE")
-plot(density(p.gtre_sml[[8]]),main="Density of Persistent TE")
+plot(density(p.gtre_sml$U),main="Density of Transient TE")
+plot(density(p.gtre_sml$H),main="Density of Persistent TE")
 ```
 
 To get the total technical efficiency, we would simply multiply the TE's of U and H in the following way: 
 
 ```{r setup 4}
-total_te <- rep(p.gtre_sml[[8]], each=10) * p.gtre_sml[[7]]
+total_te <- rep(p.gtre_sml$H, each=10) * p.gtre_sml$U
 plot(density(total_te),main="Density of Total TE")
 ```
 
-
+NB: Using the constant 10 in rep(p.gtre_sml$H, each=10) only works for a balanced panel with t=10 for each individual. For an unbalanced panel, the each argument in rep would not work.  Instead, use the times argument and a vector of length N (number of individuals), with each of the time period lengths, e.g. rep(c(2,5),times=c(5,2)).  
 

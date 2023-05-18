@@ -21,7 +21,7 @@ Maintainer: \packageMaintainer{sfm}}
 To install in R: 
 
 library(devtools)
-install_github("davidhbernstein/sfm", )  
+install_github("davidhbernstein/sfm", build_vignettes=TRUE)  
 
 ## Simple application of the generalized true random effects estimator.
 

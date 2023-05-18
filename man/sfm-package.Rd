@@ -27,15 +27,15 @@ install_github("davidhbernstein/sfm", build_vignettes=TRUE)
 
 library(sfm)
 
-data_trial <- data_gen_p(t=10,N=100, rand = 100, 
-                         sig_u = 1,  sig_v = 0.3, 
-                         sig_r = .2, sig_h = .4, 
-                         cons = 0.5, beta1 = 0.5,
+data_trial <- data_gen_p(t=10,N=100,  rand = 100, 
+                         sig_u = 1,   sig_v = 0.3, 
+                         sig_r = .2,  sig_h = .4, 
+                         cons  = 0.5, beta1 = 0.5,
                          beta2 = 0.5)
 
 psfm(formula    = y_gtre ~ x1 + x2,    
      model_name = "GTRE", 
-     data       = p_data_trial,
+     data       = data_trial,
      individual = "name",
      PSopt      = FALSE)
 }               

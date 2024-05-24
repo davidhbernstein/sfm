@@ -27,37 +27,30 @@ like.fn = function(x){
         
       eps     <- (inefdec_n*(Y  - as.matrix(data_i_vars)%*%x_x_vec))
       
-      if(model_name == "ZISF"){
-  
-  	## Calculate logit/probit probabilities for p parameter 
-  	## in ZISF
+if(model_name == "ZISF"){
   	gamma <- x[1]
   	prob <- exp(-abs(gamma)) 
-  	
-  	## Now the variance parameters
   	sigvsq <- x[2]^2
   	sigusq <- x[3]^2
-
   	sigv <- sqrt(sigvsq)
   	sigu <- sqrt(sigusq)
 
-  	## Reparametrize the log-likelihood function
   	lambda     <- sigu/sigv
   	sigsq      <- sigvsq+sigusq
   	sig        <- sqrt(sigsq)           
 
-  	## Now the likelihood function
-  	e <- eps
-
-  	f1 <- -0.5*log(2*pi*sigvsq)-(0.5/sigvsq)*e^2
-  	f2 <- log(2/sig)+log(dnorm(e/sig))+log(pnorm(e*lambda/sig))
+  	f1 <- -0.5*log(2*pi*sigvsq)-(0.5/sigvsq)*eps^2
+  	f2 <- log(2/sig)+log(dnorm(eps/sig))+log(pnorm(eps*lambda/sig))
   	f  <- prob*exp(f1)+(1-prob)*exp(f2)
 
   	like <- log(f+1e-10) }
+      
+      
+      
 
-      like[like==-Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
-      like[like== Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
-      like[is.nan(like)]       <-  -sqrt(.Machine$double.xmax/length(like))
+like[like==-Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
+like[like== Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
+like[is.nan(like)]       <-  -sqrt(.Machine$double.xmax/length(like))
       
       return(-sum(like[is.finite(like)]))}  
   
@@ -108,17 +101,13 @@ z <- 1
   sig        <- sqrt(sigsq)           
   
   ## Now the likelihood function
-  e <- eps 
-  
-  f1 <- -0.5*log(2*pi*sigvsq)-(0.5/sigvsq)*e^2
-  f2 <- log(2/sig)+log(dnorm(e/sig))+log(pnorm(e*lambda/sig))
+  f1 <- -0.5*log(2*pi*sigvsq)-(0.5/sigvsq)*eps^2
+  f2 <- log(2/sig)+log(dnorm(eps/sig))+log(pnorm(eps*lambda/sig))
   f   <- prob*exp(f1)+(1-prob)*exp(f2)
-  
-  # print.default(f)
-  
+
   post.prob <- prob*exp(f1)/f
   
-  mustar      <- e*sigusq/sigsq
+  mustar      <- eps*sigusq/sigsq
   sigstarsq   <- sigusq*sigvsq/(sigusq+sigvsq)
   sigstar     <- sqrt(sigstarsq)
   

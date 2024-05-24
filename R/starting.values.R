@@ -9,13 +9,20 @@ mu          <- 0.1
 beta_0      <- beta_0_st  
 lambda      <- sigma_u/sigma_v
 sigma       <- sqrt(sigma_u^2 + sigma_v^2)
+gam         <- 1 
 
-start_v_ntn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,mu,beta_hat))}   else{unname(c(lambda,sigma,mu,beta_0,beta_hat)) }
-start_v_t      <- if(is.na(beta_0_st)) {unname(c(sigma_u,sigma_v,1,beta_hat))} else{unname(c(sigma_u,sigma_v,1,beta_0,beta_hat)) }
-start_v_ne     <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,beta_hat))}   else{unname(c(sigma_v,sigma_u,beta_0,beta_hat)) }
-start_v_nhn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,beta_hat))}      else{unname(c(lambda,sigma,beta_0,beta_hat)) }
+start_v_ntn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,mu,beta_hat))}    else{unname(c(lambda,sigma,mu,beta_0,beta_hat)) }
+start_v_t      <- if(is.na(beta_0_st)) {unname(c(sigma_u,sigma_v,1,beta_hat))}  else{unname(c(sigma_u,sigma_v,1,beta_0,beta_hat)) }
+start_v_ne     <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,beta_hat))}    else{unname(c(sigma_v,sigma_u,beta_0,beta_hat)) }
+start_v_nhn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,beta_hat))}       else{unname(c(lambda,sigma,beta_0,beta_hat)) }
+start_v_zisf   <- if(is.na(beta_0_st)) {unname(c(gam,sigma_v,sigma_u,beta_hat))}else{unname(c(gam,sigma_v,sigma_u,beta_0,beta_hat)) }
 
-if(model_name=="NHN"){
+if(model_name %in% c("ZISF")){
+  start_v        <- start_v_zisf
+  out            <- matrix(0,nrow = 3,ncol = length(start_v))
+  colnames(out)  <- c("gamma","sigv","sigu",c(names(plm_lm$coefficients)))
+  lower_bob      <- c(-Inf, rep(.Machine$double.eps,2), rep(-Inf,n_x_vars) )}
+if(model_name %in% c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE") ){
   start_v        <- start_v_nhn
   out            <- matrix(0,nrow = 3,ncol = length(start_v))
   colnames(out)  <- c("lambda","sigma",c(names(plm_lm$coefficients)))
@@ -156,11 +163,11 @@ assign(X, get(X), envir=parent.frame())}
 rm(NAMES,X)}
 
 lower.start  <- function(start_v, model_name, differ){
-if(model_name == "TRE"){                 lower1 <- c(rep(.0000001,3) ,  start_v[-c(1:3)] - differ)}
-if(model_name == "GTRE"){                lower1 <- c(rep(.0000001,4) ,  start_v[-c(1:4)] - differ)} 
-if(model_name %in% c("NHN","NE","NTN") ){lower1 <- c(rep(.0000001,2), start_v[-c(1:2)]   - differ )}
-if(model_name =="THT"){                  lower1 <- c(rep(.0000001,3), start_v[-c(1:3)]   - differ )}  
-  
+if(model_name == "TRE"){                                                 lower1 <- c(rep(.0000001,3) ,  start_v[-c(1:3)] - differ)}
+if(model_name == "GTRE"){                                                lower1 <- c(rep(.0000001,4) ,  start_v[-c(1:4)] - differ)} 
+if(model_name %in% c("NHN","NE","NTN","NHN-MDPD","NHN-PSI","NHN-MLQE") ){lower1 <- c(rep(.0000001,2),   start_v[-c(1:2)] - differ )}
+if(model_name =="THT"){                                                  lower1 <- c(rep(.0000001,3),   start_v[-c(1:3)] - differ )}  
+if(model_name == "ZISF"){                                                lower1 <- c(start_v[1]-differ, rep(.0000001,2),   start_v[-c(1:3)] - differ)}  
 upper1 <-  c(start_v+differ)  
 
 NAMES        <- c("upper1", "lower1")

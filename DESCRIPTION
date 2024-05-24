@@ -1,6 +1,6 @@
 Package: sfm
-Version: 3.02.01
-Date: 2023-05-15
+Version: 3.03
+Date: 2024-05-21
 Title: Stochastic Frontier Models
 Type: Package
 Authors@R: c(person(given = "David", family = "Bernstein", role = c("aut","cre"), email = "davebernstein1@gmail.com"), person(given = "Christopher", family = "Parmeter", role = c("aut"), email = "cparmeter@bus.miami.edu"))

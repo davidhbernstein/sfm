@@ -8,12 +8,12 @@ citEntry(entry="Article",
          year         = "2020",
          volume       = "",
          number       = "",
-         url          = "https://www.davidharrybernstein.com/software",
+         url          = "https://github.com/davidhbernstein/sfm",
          
          textVersion = 
          paste("David H. Bernstein and Christopher F. Parmeter (2020).", 
                "Stochastic Froniter Econometrics: The sfm Package.",
                "Working Paper.",
-               "https://www.davidharrybernstein.com/software.")
+               "https://github.com/davidhbernstein/sfm.")
 )
 

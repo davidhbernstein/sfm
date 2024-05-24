@@ -1,5 +1,5 @@
 sfm <- function(formula, 
-                model_name    = c("NHN","NHN_Z","NE","NE_Z","THT","NTN"), 
+                model_name    = c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE","NHN_Z","NE","NE_Z","THT","NTN"), 
                 data, 
                 maxit.bobyqa  = 10000,
                 maxit.psoptim = 1000,
@@ -13,18 +13,20 @@ sfm <- function(formula,
                 optHessian    = TRUE,
                 inefdec       = TRUE,
                 upper         = NA,
-                Method        = "L-BFGS-B"){
+                Method        = "L-BFGS-B",
+                eta           = 0.01,   
+                alpha         = 0.2){
   
 data_proc(formula,   data, model_name, individual = NULL, inefdec)
 start_cs( formula_x ,data_orig, x_vars_vec, intercept, model_name, n_x_vars, start_val) 
 data_proc2(data, data_x, fancy_vars, fancy_vars_z, data_z, y_var, x_vars_vec, halton_num=NA, individual=NA, N, model_name)
 
-if(model_name %in% c("NHN","NE","THT","NTN") ){
+if(model_name %in% c("NHN","NE","NHN-MDPD","NHN-PSI","NHN-MLQE","THT","NTN") ){
 like.fn = function(x){
       
-      if(model_name %in% c("NHN","NE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
-      if(model_name ==     "THT"){      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
-      if(model_name ==     "NTN"){      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
+      if(model_name %in% c("NHN","NE","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
+      if(model_name ==     "THT"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
+      if(model_name ==     "NTN"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
       
       eps     <- (inefdec_n*(Y  - as.matrix(data_i_vars)%*%x_x_vec))
       
@@ -38,6 +40,34 @@ like.fn = function(x){
       l3    <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
       
       like  <-  l1+l2+l3}
+      
+      if(model_name == "NHN-MLQE"){
+        NNN  <- length(data)
+        QQ   <- 1 - (1/ (10*log(NNN+10)) )
+        
+        like0  <- (2/x[2])  *    dnorm(eps/x[2])*  pnorm(-eps*x[1]/x[2])    
+        like   <- sum(  (like0^(1-QQ) - 1) /  (1-QQ)  )
+      }
+      
+      if(model_name == "NHN-MDPD"){
+        fn_inner  <- function(z){exp(-(1+alpha)*(z^2/2))*pnorm(-z*x[1])^(1+alpha)}
+        
+        like  <-  -as.numeric((1/ (x[2]^alpha))* 
+                               (( (sqrt(2) / sqrt(pi))*integrate(f=fn_inner,lower = -Inf,upper = Inf)[[1]])-    
+                                  ((1+(1/alpha))*(1/N)*sum(exp(-alpha*(eps^2/ (2*x[2]^2)))*pnorm(-(eps*x[1])/x[2])^alpha))))}
+      
+      if(model_name == "NHN-PSI"){
+        fn_int  <- function(z){ 
+          like0 <- (2 / x[2]) * dnorm(z/x[2]) * pnorm(-z*x[1]/x[2])
+          like  <- like0^(eta+1) / (eta+1)
+          return(like)}
+        
+        fn_sum  <- function(z){ 
+          like0 <- (2 / x[2]) * dnorm(z/x[2]) * pnorm(-z*x[1]/x[2])
+          like  <- like0^eta / eta
+          return(like)}
+        
+        like  <-  mean(fn_sum(eps)) - integrate(f=fn_int, lower = -Inf, upper = Inf)[[1]] }
       
       if(model_name=="THT"){
         sig_u   <- x[1]
@@ -90,7 +120,7 @@ out[2,]    <- st_err
 out[3,]    <- t_val
 print(t(out))
     
-if(model_name=="NHN"){
+if(model_name %in% c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE") ){
 beta  <- opt$par[-c(1:2)]
 lamb  <- opt$par[1]
 sig   <- opt$par[2]
@@ -105,7 +135,7 @@ exp_u_hat  <- pmax(exp_u_hat, 0)
 exp_u_hat  <- pmin(exp_u_hat, 1)}
 
     
-    if(model_name=="NHN"){
+    if(model_name %in%  c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE") ){
     ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, exp_u_hat)
     names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","exp_u_hat")}else{
     ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula)

@@ -1,4 +1,4 @@
-export(psfm, sfm, data_gen_p, data_gen_cs, start)
+export(zsfm, psfm, sfm, data_gen_p, data_gen_cs, start)
 
 import("plm") # import whole package
 import("minqa") # import whole package

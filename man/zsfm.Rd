@@ -75,6 +75,15 @@ Chris Parmeter and David Bernstein
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-HERE 
+library(sfm)
+
+eqz         <- y ~ q1 + q2 + q3 + q4 + q5 + w1 + w2 + w3 + w4|z
+
+data(panel89)
+
+output   <- zsfm(formula    = eqz,
+                 model_name = "ZISF_Z",
+                 data       = panel89,
+                 logit      = TRUE)
 }
  

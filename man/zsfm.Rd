@@ -1,69 +1,54 @@
 \name{zsfm}
 \alias{zsfm}
-%- Also NEED an '\alias' for EACH other topic documented here.
+zsfm
 \title{
-A Capitalized Title (ideally limited to 65 characters)
+Zero-Inflated Stochastic Frontier Model 
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Code to use the Zero-Inflated Stochastic Frontier Model 
 }
 \usage{
-zsfm(formula, model_name = c("ZISF", "ZISF_Z"), data, maxit.bobyqa = 10000, maxit.psoptim = 1000, maxit.optim = 1000, REPORT = 1, trace = 2, pgtol = 0, start_val = FALSE, PSopt = FALSE, bob = TRUE, optHessian = TRUE, inefdec = TRUE, upper = NA, Method = "L-BFGS-B", eta = 0.01, alpha = 0.2, logit = TRUE)
+zsfm(formula, 
+model_name = c("ZISF", "ZISF_Z"), 
+data, 
+maxit.bobyqa = 10000,
+maxit.psoptim = 1000, 
+maxit.optim = 1000, 
+REPORT = 1, 
+trace = 2, 
+pgtol = 0,
+start_val = FALSE,
+PSopt = FALSE, 
+bob = TRUE, 
+optHessian = TRUE, 
+inefdec = TRUE, 
+upper = NA, 
+Method = "L-BFGS-B",
+eta = 0.01, 
+alpha = 0.2, 
+logit = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{formula}{
-%%     ~~Describe \code{formula} here~~
+\item{formula}{a symbolic description for the model to be estimated}
+\item{model_name}{model name for the estimation}
+\item{data}{A data set}
+\item{maxit.bobyqa}{Maximum number of iterations for the bobyqa optimization routine}
+\item{maxit.psoptim}{Maximum number of iterations for the psoptim optimization routine}
+\item{maxit.optim}{Maximum number of iterations for the optim optimization routine}
+\item{REPORT}{reporting parameter}
+\item{trace}{trace}
+\item{pgtol}{pgtol}
+\item{start_val}{starting value (optional)}
+\item{PSopt}{use psoptim optimization routine (T/F)}
+\item{bob}{use bobyqa optimization routine (T/F)}
+\item{optHessian}{Logical. Should a numerically differentiated Hessian matrix be returned? (for optim routine)}
+\item{inefdec}{Production or cost function}
+\item{upper}{Vector of upper values for the optim package.}
+\item{Method}{The method to be used for optim. See ‘Details’ within optim.}
+\item{logit}{Choice of using logit function}
 }
-  \item{model_name}{
-%%     ~~Describe \code{model_name} here~~
-}
-  \item{data}{
-%%     ~~Describe \code{data} here~~
-}
-  \item{maxit.bobyqa}{
-%%     ~~Describe \code{maxit.bobyqa} here~~
-}
-  \item{maxit.psoptim}{
-%%     ~~Describe \code{maxit.psoptim} here~~
-}
-  \item{maxit.optim}{
-%%     ~~Describe \code{maxit.optim} here~~
-}
-  \item{REPORT}{
-%%     ~~Describe \code{REPORT} here~~
-}
-  \item{trace}{
-%%     ~~Describe \code{trace} here~~
-}
-  \item{pgtol}{
-%%     ~~Describe \code{pgtol} here~~
-}
-  \item{start_val}{
-%%     ~~Describe \code{start_val} here~~
-}
-  \item{PSopt}{
-%%     ~~Describe \code{PSopt} here~~
-}
-  \item{bob}{
-%%     ~~Describe \code{bob} here~~
-}
-  \item{optHessian}{
-%%     ~~Describe \code{optHessian} here~~
-}
-  \item{inefdec}{
-%%     ~~Describe \code{inefdec} here~~
-}
-  \item{upper}{
-%%     ~~Describe \code{upper} here~~
-}
-  \item{Method}{
-%%     ~~Describe \code{Method} here~~
-}
-  \item{logit}{
-%%     ~~Describe \code{logit} here~~
-}
-}
+
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
@@ -78,7 +63,7 @@ zsfm(formula, model_name = c("ZISF", "ZISF_Z"), data, maxit.bobyqa = 10000, maxi
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Chris Parmeter and David Bernstein
 }
 \note{
 %%  ~~further notes~~
@@ -92,12 +77,4 @@ zsfm(formula, model_name = c("ZISF", "ZISF_Z"), data, maxit.bobyqa = 10000, maxi
 \examples{
 HERE 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory (show via RShowDoc("KEYWORDS")):
-% \keyword{ ~kwd1 }
-% \keyword{ ~kwd2 }
-% Use only one keyword per line.
-% For non-standard keywords, use \concept instead of \keyword:
-% \concept{ ~cpt1 }
-% \concept{ ~cpt2 }
-% Use only one concept per line.
+ 

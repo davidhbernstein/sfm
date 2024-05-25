@@ -82,6 +82,8 @@ fancy_vars_z   <- NULL
 if(isTRUE(individual==NULL)){}else{N  <- length(unique(data[,c(individual)]))
 assign("N", N, envir=parent.frame())  }
 
+n_z_vars       <- NA  ## maybe make condition here making this default to null
+
 if(length(unlist(form_parts))>3){    
 intercept_z    <- if(isTRUE(grepl(-1, gsub("[[:space:]]", "",as.character(formula_z))))) {0} else{1}
 z_vars_vec     <- if(model_name %in% c("WMLE","FD") & intercept_z==1){colnames(data_z)[-c(1)]}else {colnames(data_z)}
@@ -97,7 +99,7 @@ rm(NAMES_Z,X)
 
 NAMES  <-  c("data_orig", "form_parts", "formula_x", "y_var", "model_name", 
              "data_x", "intercept", "inefdec_n", "inefdec_TF",
-             "x_vars_vec", "n_x_vars", "x_vars", "x_x_vec", "fancy_vars","fancy_vars_z")
+             "x_vars_vec", "n_x_vars", "x_vars", "x_x_vec", "fancy_vars","fancy_vars_z","n_z_vars")
 
 for (X in NAMES){
 assign(X, get(X), envir=parent.frame())}  

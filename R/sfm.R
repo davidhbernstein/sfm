@@ -145,9 +145,7 @@ exp_u_hat  <- pmin(exp_u_hat, 1)}
     return(ret_stuff)}
   
 if(model_name %in% c("NE_Z","NHN_Z")){
-n_z_vars       <- length(z_vars)
-z_z_vec        <- rep(0,length= n_z_vars)
-    
+
 ## Starting values  
 plm_pcs        <- lm(formula_x ,data)
 beta_hat       <- if(isTRUE(intercept==0)){plm(formula_x ,data,effect = "individual")$coefficients[c(x_vars_vec)]} else{plm_pcs$coefficients[-c(1)]}

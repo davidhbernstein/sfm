@@ -17,42 +17,62 @@ zsfm <- function(formula,
                 logit         = TRUE){
   
 data_proc(formula,   data, model_name, individual = NULL, inefdec)
-start_cs( formula_x ,data_orig, x_vars_vec, intercept, model_name, n_x_vars, start_val) 
+start_cs( formula_x ,data_orig, x_vars_vec, intercept, model_name, n_x_vars, start_val,n_z_vars,z_vars) 
 data_proc2(data, data_x, fancy_vars, fancy_vars_z, data_z, y_var, x_vars_vec, halton_num=NA, individual=NA, N, model_name)
 
 if(model_name %in% c("ZISF","ZISF_Z") ){
 like.fn = function(x){
       
-      if(model_name %in% c("ZISF","ZISF_Z")){x_x_vec <- x[4:as.numeric(n_x_vars+3)]}
+      if(model_name %in% c("ZISF")){  x_x_vec <- x[4:as.numeric(n_x_vars+3)]}
+      if(model_name %in% c("ZISF_Z")){x_x_vec <- x[3:as.numeric(n_x_vars+2)]}
         
       eps     <- (inefdec_n*(Y  - as.matrix(data_i_vars)%*%x_x_vec))
       
 if(model_name == "ZISF"){
-  	gamma <- x[1]
-  	prob <- exp(-abs(gamma)) 
+  	gamma  <- x[1]
+  	prob   <- exp(-abs(gamma)) 
   	sigvsq <- x[2]^2
   	sigusq <- x[3]^2
-  	sigv <- sqrt(sigvsq)
-  	sigu <- sqrt(sigusq)
+  	sigv   <- sqrt(sigvsq)
+  	sigu   <- sqrt(sigusq)
 
-  	lambda     <- sigu/sigv
-  	sigsq      <- sigvsq+sigusq
-  	sig        <- sqrt(sigsq)           
+  	lambda <- sigu/sigv
+  	sigsq  <- sigvsq+sigusq
+  	sig    <- sqrt(sigsq)           
 
-  	f1 <- -0.5*log(2*pi*sigvsq)-(0.5/sigvsq)*eps^2
-  	f2 <- log(2/sig)+log(dnorm(eps/sig))+log(pnorm(eps*lambda/sig))
-  	f  <- prob*exp(f1)+(1-prob)*exp(f2)
+  	f1     <- -0.5*log(2*pi*sigvsq)-(0.5/sigvsq)*eps^2
+  	f2     <- log(2/sig)+log(dnorm(eps/sig))+log(pnorm(eps*lambda/sig))
+  	f      <- prob*exp(f1)+(1-prob)*exp(f2)
 
-  	like <- log(f+1e-10) }
+  	like   <- log(f+1e-10) }
       
+if(model_name == "ZISF_Z"){
+    gamma <- x[(n_x_vars+3):(n_x_vars+2+n_z_vars)]  ## lets put gammas last 
+    
+    if(logit){ prob <- exp(  data_z%*%gamma)/(1+exp(  data_z%*%gamma))}
+    if(!logit){prob <- pnorm(data_z%*%gamma)/(1+pnorm(data_z%*%gamma))}
+    
+    sigvsq <- x[1]^2
+    sigusq <- x[2]^2
+    sigv   <- sqrt(sigvsq)
+    sigu   <- sqrt(sigusq)
+    
+    lambda <- sigu/sigv
+    sigsq  <- sigvsq+sigusq
+    sig    <- sqrt(sigsq)           
       
-      
+    f1     <- -0.5*log(2*pi*sigvsq)-(0.5/sigvsq)*eps^2
+    f2     <- log(2/sig)+log(dnorm(eps/sig))+log(pnorm(eps*lambda/sig))
+    f      <- prob*exp(f1)+(1-prob)*exp(f2)
+        
+    like   <- log(f+1e-10) }      
+
 
 like[like==-Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
 like[like== Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
 like[is.nan(like)]       <-  -sqrt(.Machine$double.xmax/length(like))
       
-      return(-sum(like[is.finite(like)]))}  
+return(-sum(like[is.finite(like)]))}  
   
 start.time()
    
@@ -76,21 +96,30 @@ out[2,]    <- st_err
 out[3,]    <- t_val
 print(t(out))
     
-if(model_name %in% c("ZISF") ){
 
-beta <- opt$par[-c(1:3)]
-eps  <- (inefdec_n*(Y  - as.matrix(data_i_vars)%*%beta))  
-  
-z <- 1
-  
-  ## Calculate logit/probit probabilities for p parameter 
-  ## in ZISF
+## JLMS
+if(model_name %in% c("ZISF","ZISF_Z")){
+
+  if(is.na(n_z_vars)==TRUE){
+  beta <- opt$par[-c(1:3)]
+  z <- 1
   gamma <- opt$par[1]
   prob  <- exp(-gamma)
   
-  ## Now the variance parameters
   sigvsq <- opt$par[2]^2
-  sigusq <- opt$par[3]^2
+  sigusq <- opt$par[3]^2 }
+  
+  if(is.na(n_z_vars)==FALSE){
+    beta  <- opt$par[3:sum(n_x_vars,2) ]
+    gamma <- opt$par[(n_x_vars+3):(n_x_vars+2+n_z_vars)]  ## lets put gammas last 
+    
+    if(logit){prob  <- exp(data_z%*%gamma)/(1+exp(data_z%*%gamma))}
+    if(!logit){prob <- pnorm(data_z%*%gamma)/(1+pnorm(data_z%*%gamma))}
+    
+    sigvsq <- opt$par[1]^2
+    sigusq <- opt$par[2]^2 }
+    
+  eps  <- (inefdec_n*(Y  - as.matrix(data_i_vars)%*%beta))
   
   sigv <- sqrt(sigvsq)
   sigu <- sqrt(sigusq)

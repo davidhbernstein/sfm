@@ -1,4 +1,4 @@
-start_cs    <- function(formula_x ,data_orig, x_vars_vec, intercept, model_name, n_x_vars, start_val){
+start_cs    <- function(formula_x ,data_orig, x_vars_vec, intercept, model_name, n_x_vars, start_val,n_z_vars,z_vars){
 plm_lm      <- lm(formula_x ,data_orig)  
 beta_hat    <- if(isTRUE(intercept==0)) {plm_lm$coefficients[x_vars_vec]} else{plm_lm$coefficients[x_vars_vec][-1]}
 epsilon_hat <- plm_lm$residuals
@@ -22,6 +22,13 @@ if(model_name %in% c("ZISF")){
   out            <- matrix(0,nrow = 3,ncol = length(start_v))
   colnames(out)  <- c("gamma","sigv","sigu",c(names(plm_lm$coefficients)))
   lower_bob      <- c(-Inf, rep(.Machine$double.eps,2), rep(-Inf,n_x_vars) )}
+if(model_name %in% c("ZISF_Z")){
+start_v_zisfz  <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,beta_hat,rep(mu,n_z_vars)))}else{unname(c(sigma_v,sigma_u,beta_0,beta_hat,rep(mu,n_z_vars))) }
+  start_v        <- start_v_zisfz
+  out            <- matrix(0,nrow = 3,ncol = length(start_v))
+  colnames(out)  <- c("sigv","sigu",c(names(plm_lm$coefficients)),z_vars )
+  lower_bob      <- c(rep(.Machine$double.eps,2), rep(-Inf,n_x_vars+n_z_vars) )
+  }
 if(model_name %in% c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE") ){
   start_v        <- start_v_nhn
   out            <- matrix(0,nrow = 3,ncol = length(start_v))
@@ -167,7 +174,8 @@ if(model_name == "TRE"){                                                 lower1 
 if(model_name == "GTRE"){                                                lower1 <- c(rep(.0000001,4) ,  start_v[-c(1:4)] - differ)} 
 if(model_name %in% c("NHN","NE","NTN","NHN-MDPD","NHN-PSI","NHN-MLQE") ){lower1 <- c(rep(.0000001,2),   start_v[-c(1:2)] - differ )}
 if(model_name =="THT"){                                                  lower1 <- c(rep(.0000001,3),   start_v[-c(1:3)] - differ )}  
-if(model_name == "ZISF"){                                                lower1 <- c(start_v[1]-differ, rep(.0000001,2),   start_v[-c(1:3)] - differ)}  
+if(model_name %in% c("ZISF")){                                  lower1 <- c(start_v[1]-differ, rep(.0000001,2),   start_v[-c(1:3)] - differ)}  
+if(model_name %in% c("ZISF_Z")){                                lower1 <- c(rep(.0000001,2),  start_v[-c(1:2)] - differ)}
 upper1 <-  c(start_v+differ)  
 
 NAMES        <- c("upper1", "lower1")

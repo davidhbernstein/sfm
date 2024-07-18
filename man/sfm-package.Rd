@@ -14,7 +14,7 @@ This package is currently being developed to work in a wide range of application
 \packageAuthor{sfm}
 
 Maintainer: \packageMaintainer{sfm}}
-\references{Chen Schmidt and Wang 2014 \\ Fillipini and Greene 2016 \\ Wang Ho 2010}
+\references{Chen, Schmidt, and Wang (2014, JoE); Fillipini and Greene (2016, JPA), Wang and Ho (2010, JoE)}
 \keyword{ package }
 \seealso{\code{\url{http://www.davidharrybernstein.com/software}{http://www.davidharrybernstein.com/software}}}
 \examples{

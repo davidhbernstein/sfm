@@ -1,11 +1,10 @@
 Package: sfm
-Version: 3.03
-Date: 2024-05-21
+Version: 3.04
+Date: 2024-07-18
 Title: Stochastic Frontier Models
 Type: Package
-Authors@R: c(person(given = "David", family = "Bernstein", role = c("aut","cre"), email = "davebernstein1@gmail.com"), person(given = "Christopher", family = "Parmeter", role = c("aut"), email = "cparmeter@bus.miami.edu"))
-Authors: David Bernstein  [aut, cre], Christopher Parmeter  [aut]
-Maintainer: David Bernstein <davebernstein1@gmail.com> 
+Authors: David Bernstein, Christopher Parmeter
+Maintainer: David Bernstein <dbernstein@bus.miami.edu> 
 Description: sfm makes the estimation of stochastic frontier models user friendly
 Suggests: 
     knitr,

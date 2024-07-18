@@ -9,10 +9,6 @@
 \packageDESCRIPTION{sfm}
 \packageIndices{sfm}
 This package is currently being developed to work in a wide range of applications.  The main functions of the package are two cross-sectional functions: "sfm" and "zsfm" as well as a panel function "psfm" which all implement various SFA based estimators.}
-\author{
-\packageAuthor{sfm}
-
-Maintainer: \packageMaintainer{sfm}}
 \references{Chen, Schmidt, and Wang (2014, JoE); Fillipini and Greene (2016, JPA), Wang and Ho (2010, JoE)}
 \keyword{ package }
 \seealso{\code{\url{http://www.davidharrybernstein.com/software}{http://www.davidharrybernstein.com/software}}}

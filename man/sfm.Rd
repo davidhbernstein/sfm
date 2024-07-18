@@ -13,7 +13,7 @@ sfm(formula, model_name = c("NHN", "NHN_Z", "NE", "NE_Z", "THT", "NTN"), data, m
 %- maybe also 'usage' for other objects documented here.
 \arguments{
 \item{formula}{a symbolic description for the model to be estimated}
-\item{model_name}{model name for the estimation}
+\item{model_name}{model name for the estimation includes the: normal-half normal (NHN), normal-exponential (NE), student's t-half t (THT), and the normal-truncated normal (NTN).}
 \item{data}{A data set}
 \item{maxit.bobyqa}{Maximum number of iterations for the bobyqa optimization routine}
 \item{maxit.psoptim}{Maximum number of iterations for the psoptim optimization routine}
@@ -45,9 +45,9 @@ NA
 \author{
 David Bernstein
 }
-\note{
-NA
-}
+\note{The options include the normal-half normal (NHN), Normal-exponential (NE), student's t-half t (THT), and the normal-truncated normal (NTN).  NHN_Z and NE_Z are extensions for the NHN and NE models that allow for modeling the u-component of those models with determinants of inefficiency.
+
+Outputs include E[exp(-u)|e] given by exp_u_hat, following Battese and Coelli (1988, JoE), where appropriate.}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

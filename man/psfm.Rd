@@ -37,11 +37,11 @@ psfm(formula, model_name = c("TRE_Z", "GTRE_Z", "TRE", "GTRE", "WMLE", "FD", "GT
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{NA}
+\references{Fillipini and Greene (2016, JPA)}
 \author{
-David Bernstein
-}
-\note{NA}
+David Bernstein}
+
+\note{The generalized true random effects model (GTRE, 4-component model) and true random effects models (TRE) are both estimated by simulated maximum likelihood based on the paper by the Fillipini and Greene (2016, JPA).  The TRE_Z and GTRE_Z allow for modeling the u-component of the GTRE and TRE with determinants of inefficiency.  }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

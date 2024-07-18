@@ -8,8 +8,7 @@
 \details{The DESCRIPTION file:
 \packageDESCRIPTION{sfm}
 \packageIndices{sfm}
-This package is currently being developed to work in a wide range of applications.   The main functions of the package are "sfm" and "psfm" which can apply different cross-sectional and panel based SFA estimators, respectively.
-}
+This package is currently being developed to work in a wide range of applications.  The main functions of the package are two cross-sectional functions: "sfm" and "zsfm" as well as a panel function "psfm" which all implement various SFA based estimators.}
 \author{
 \packageAuthor{sfm}
 

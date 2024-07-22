@@ -5,7 +5,7 @@ Title: Stochastic Frontier Models
 Type: Package
 Authors: David Bernstein, Christopher Parmeter
 Maintainer: David Bernstein <dbernstein@bus.miami.edu> 
-Description: sfm makes the estimation of stochastic frontier models user friendly
+Description: R package sfm makes the estimation of cross-sectional and panel stochastic frontier models user friendly. This package is currently being developed to work in a wide range of applications. The main functions of the package are two cross-sectional functions: "sfm" and "zsfm" as well as a panel function "psfm" which all implement various SFA based estimators.
 Suggests: 
     knitr,
     MASS,

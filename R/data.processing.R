@@ -64,7 +64,7 @@ if(model_name=="NHN"){ model_name <- "NHN_Z"}
 if(model_name=="NE"){  model_name <- "NE_Z"}
 if(model_name=="GTRE"){model_name <- "GTRE_Z"}
 if(model_name=="TRE"){ model_name <- "TRE_Z"}
-if(model_name %in% c("THT","NTN","CHC","NU")){print("Currently building this functionality") 
+if(model_name %in% c("THT","NTN","CHC","NU")){print("Currently building this functionality.") 
 return(c("Currently building this functionality"))}}#else{z_vars <- NULL}
 
 data_x    <- data_conform(formula = formula_x, data = data)

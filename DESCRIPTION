@@ -11,7 +11,7 @@ Suggests:
     MASS,
     rmarkdown
 Imports: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv
-Depends: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, R (>= 4.4.1)
+Depends: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, R (>= 4.4.0)
 License: GPL (>= 2)
 URL: https://www.davidharrybernstein.com/software
 LazyLoad: yes

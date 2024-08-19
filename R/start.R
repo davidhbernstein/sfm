@@ -1,3 +1,3 @@
 .onAttach <- function(libname, pkgname) {
-  packageStartupMessage("Welcome to sfm")
+  packageStartupMessage("Welcome to the sfm package!")
 }

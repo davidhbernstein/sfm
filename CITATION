@@ -5,13 +5,13 @@ citEntry(entry="Article",
          author = personList(as.person("David H. Bernstein"),
                              as.person("Christopher F. Parmeter")),
          journal      = "Working Paper",
-         year         = "2020",
+         year         = "2024",
          volume       = "",
          number       = "",
          url          = "https://github.com/davidhbernstein/sfm",
          
          textVersion = 
-         paste("David H. Bernstein and Christopher F. Parmeter (2020).", 
+         paste("David H. Bernstein and Christopher F. Parmeter (2024).", 
                "Stochastic Froniter Econometrics: The sfm Package.",
                "Working Paper.",
                "https://github.com/davidhbernstein/sfm.")

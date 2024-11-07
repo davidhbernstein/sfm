@@ -88,6 +88,10 @@ NAMES        <- c("plm_gtre", "beta_hat", "alpha_hat", "epsilon_hat", "beta_0_st
   rm(NAMES,X)  
 }
 
+if (isTRUE(is.numeric(start_val))){
+start_v <- start_val
+assign("start_v", start_v, envir=parent.frame())}
+  
 if(isFALSE(is.numeric(start_val)) &  model_name %in% c("TRE_Z","GTRE_Z","TRE","GTRE","GTRE_SEQ1","GTRE_SEQ2")){
   sfa_eps        <- pcs_c(Y  = as.numeric(epsilon_hat))[[1]]$par
   sfa_alp        <- pcs_c(Y  = as.numeric(alpha_hat  ))[[1]]$par
@@ -103,7 +107,9 @@ if(isFALSE(is.numeric(start_val)) &  model_name %in% c("TRE_Z","GTRE_Z","TRE","G
 if(model_name %in% c("GTRE_Z","TRE_Z")){beta_0  <- beta_0_st + exp_u}
   
 if(model_name %in% c("GTRE","TRE")){
-if (isTRUE(is.numeric(start_val))) {start_v <- start_val} else{
+if (isTRUE(is.numeric(start_val))) {
+  start_v <- start_val
+  assign("start_v", start_v, envir=parent.frame())}else{
 start_v <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,sigma_r,sigma_h,beta_hat))} else{unname(c(lambda,sigma,sigma_r,sigma_h,beta_0,beta_hat))} }
 
 out           <- matrix(0,nrow = 3,ncol = length(start_v))

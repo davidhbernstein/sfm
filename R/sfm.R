@@ -55,6 +55,7 @@ like.fn = function(x){
       like  <-      as.numeric(log(     pmax(   (2/x[2])    * 
                                               dnorm(eps/x[2]) *
                                               pnorm(-eps*x[1]/x[2])  ,  eps*0+.Machine$double.eps )    ))}
+      
       if(model_name == "NE"){
       l1    <- log(1/x[2])
       l2    <- pnorm( -(eps/x[1]) - (x[1]    /x[2]), log.p = TRUE)

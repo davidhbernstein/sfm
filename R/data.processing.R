@@ -17,7 +17,25 @@ data_i_vars   <-  as.matrix(data.frame(subset(data,select = x_vars_vec)))
 if(model_name %in% c("GTRE","TRE") ){
 if (isTRUE(is.numeric(halton_num))) {R <- halton_num}else{
 R       <- ceiling(sqrt(nrow(data)))+100 }         ## Integral reps  
-R_H     <- randtoolbox::halton(R,2,normal = TRUE)  ## halton seqs
+# R_H     <- randtoolbox::halton(R,2,normal = TRUE)  ## halton seqs
+# R_H     <- randtoolbox::halton(R+1000,2,start = 1,normal = TRUE)[-c(1:1000),c(1:2)]  ## remove first several 
+  
+  R_H     <- randtoolbox::halton(R+1000,2,start = 1,normal = FALSE)[-c(1:1000),c(1:2)]   
+  R_H     <- cbind( qnorm(R_H[,1]) , sqrt(2)* pracma::erfinv(R_H[,2]) )                ## using inverse error function for R_H2
+  
+  set.seed(123)
+  
+  mat <- matrix(0,nrow=R, ncol=9999)
+  for(v in 1:9999){mat[,v] <-  sample(R_H[,1])}
+  
+  cor <- matrix(0,9999,1)
+  for(v in 1:9999){cor[v] <-  abs(cor(mat[,v],R_H[,2]))}
+  
+  R_H <- cbind(mat[,which(cor==min(cor))] , R_H[,2])
+  rm(cor,v,mat)
+
+print(paste( "Primes 2 and 3 are in use, with 1,000 discards.  Correlation between R and H draws is:", round(cor(R_H)[1,2],10), sep = "" )) 
+
 indiv   <- noquote(as.vector(unique(data[,c(individual)])))
 t       <- rep(0, N)
 data_i  <- Y <- eps <- data_i_vars <- R_h1 <- R_h2 <- as.list(rep(0,N))

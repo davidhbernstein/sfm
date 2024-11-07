@@ -1,6 +1,6 @@
 Package: sfm
-Version: 3.04
-Date: 2024-07-18
+Version: 4.0
+Date: 2024-09-11
 Title: Stochastic Frontier Models
 Type: Package
 Authors: David Bernstein, Christopher Parmeter
@@ -10,8 +10,8 @@ Suggests:
     knitr,
     MASS,
     rmarkdown
-Imports: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv
-Depends: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, R (>= 4.4.0)
+Imports: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, pracma
+Depends: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, pracma, R (>= 4.4.0)
 License: GPL (>= 2)
 URL: https://www.davidharrybernstein.com/software
 LazyLoad: yes

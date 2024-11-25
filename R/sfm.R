@@ -57,11 +57,11 @@ like.fn = function(x){
                                               pnorm(-eps*x[1]/x[2])  ,  eps*0+.Machine$double.eps )    ))}
       
       if(model_name == "NE"){
-      l1    <- log(1/x[2])
-      l2    <- pnorm( -(eps/x[1]) - (x[1]    /x[2]), log.p = TRUE)
-      l3    <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
+      l1   <- log(1/x[2])
+      l2   <- pnorm( -(eps/x[1]) - (x[1]    /x[2]), log.p = TRUE)
+      l3   <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
       
-      like  <-  l1+l2+l3}
+      like <-  l1+l2+l3}
       
       if(model_name == "NHN-MLQE"){
         NNN    <- length(data)

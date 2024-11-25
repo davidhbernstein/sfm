@@ -12,7 +12,7 @@ sfm <- function(formula,
                 bob           = TRUE,
                 optHessian    = TRUE,
                 inefdec       = TRUE,
-                upper         = NA,
+                upper         = NA, #comment
                 Method        = "L-BFGS-B",
                 eta           = 0.01,   
                 alpha         = 0.2){

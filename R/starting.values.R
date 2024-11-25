@@ -176,7 +176,7 @@ for (X in NAMES){
 assign(X, get(X), envir=parent.frame())}  
 rm(NAMES,X)}
 
-lower.start  <- function(start_v, model_name, differ){
+lower.start <- function(start_v, model_name, differ){
 if(model_name == "TRE"){                                                 lower1 <- c(rep(.0000001,3) ,  start_v[-c(1:3)] - differ)}
 if(model_name == "GTRE"){                                                lower1 <- c(rep(.0000001,4) ,  start_v[-c(1:4)] - differ)} 
 if(model_name %in% c("NHN","NE","NTN","NHN-MDPD","NHN-PSI","NHN-MLQE") ){lower1 <- c(rep(.0000001,2),   start_v[-c(1:2)] - differ )}

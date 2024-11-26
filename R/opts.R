@@ -17,7 +17,6 @@ assign("start_v",     start_v,     envir=parent.frame())
 assign("start_feval", start_feval, envir=parent.frame())  
 }
 
-
 opt.optim     <- function(fn, start_v, lower.optim, upper.optim, maxit.optim, opt.TF, method, optHessian, trace=1){
   start_feval   <-  fn(start_v)
   if(isTRUE(opt.TF ==TRUE)){
@@ -39,7 +38,6 @@ opt.optim     <- function(fn, start_v, lower.optim, upper.optim, maxit.optim, op
   assign("opt",         opt,     envir=parent.frame())
   assign("start_feval", start_feval, envir=parent.frame())
 }
-
 
 opt.psoptim   <- function(fn, start_v, lower.psoptim, upper.psoptim=NA, maxit.psoptim, psopt.TF, rand.order = TRUE){
   start_feval   <-  fn(start_v)

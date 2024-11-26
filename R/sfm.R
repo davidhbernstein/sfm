@@ -25,8 +25,7 @@ if(model_name %in% c("NHN","NE","NHN-MDPD","NHN-PSI","NHN-MLQE","THT","NTN","NHN
 like.fn = function(x){
       
       if(model_name %in% c("NHN","NE","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
-      if(model_name ==     "THT"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
-      if(model_name ==     "NTN"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
+      if(model_name %in% c("THT","NTN")){                               x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
 
       if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset(data,select = z_vars)))
                                             x_x_vec     <- x[2:as.numeric(n_x_vars+1)]
@@ -57,11 +56,11 @@ like.fn = function(x){
                                               pnorm(-eps*x[1]/x[2])  ,  eps*0+.Machine$double.eps )    ))}
       
       if(model_name == "NE"){
-      l1    <- log(1/x[2])
-      l2    <- pnorm( -(eps/x[1]) - (x[1]    /x[2]), log.p = TRUE)
-      l3    <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
+      l1   <- log(1/x[2])
+      l2   <- pnorm( -(eps/x[1]) - (x[1]    /x[2]), log.p = TRUE)
+      l3   <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
       
-      like  <-  l1+l2+l3}
+      like <-  l1+l2+l3}
       
       if(model_name == "NHN-MLQE"){
         NNN    <- length(data)

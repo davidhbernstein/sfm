@@ -23,11 +23,9 @@ data_proc2(data, data_x, fancy_vars, fancy_vars_z, data_z, y_var, x_vars_vec, ha
 
 if(model_name %in% c("NHN","NE","NR","NHN-MDPD","NHN-PSI","NHN-MLQE","THT","NTN","NHN_Z","NE_Z") ){
 like.fn = function(x){
-      
       if(model_name %in% c("NHN","NE","NR","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
       if(model_name ==     "THT"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
       if(model_name ==     "NTN"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
-
       if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset(data,select = z_vars)))
                                             x_x_vec     <- x[2:as.numeric(n_x_vars+1)]
                                             z_z_vec     <- x[as.numeric(n_x_vars+2):as.numeric(length(start_v))]}
@@ -57,12 +55,10 @@ like.fn = function(x){
                                               pnorm(-eps*x[1]/x[2])  ,  eps*0+.Machine$double.eps )    ))}
       
       if(model_name == "NE"){
-      l1    <- log(1/x[2])
-      l2    <- pnorm( -(eps/x[1]) - (x[1]    /x[2]), log.p = TRUE)
-      l3    <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
+      l1   <- log(1/x[2])
+      l2   <- pnorm( -(eps/x[1]) - (x[1]    /x[2]), log.p = TRUE)
+      l3   <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
       
-      like  <-  l1+l2+l3}
-
       if(model_name=="NR"){
         sigv           <- x[1]
         sigu          <- x[2]

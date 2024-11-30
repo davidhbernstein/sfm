@@ -1,5 +1,5 @@
 sfm <- function(formula, 
-                model_name    = c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE","NHN_Z","NE","NE_Z","THT","NTN"), 
+                model_name    = c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE","NHN_Z","NE","NE_Z","NR","THT","NTN"), 
                 data, 
                 maxit.bobyqa  = 10000,
                 maxit.psoptim = 1000,
@@ -21,10 +21,10 @@ data_proc(formula,   data, model_name, individual = NULL, inefdec)
 start_cs( formula_x ,data_orig, x_vars_vec, intercept, model_name, n_x_vars, start_val,n_z_vars,z_vars) 
 data_proc2(data, data_x, fancy_vars, fancy_vars_z, data_z, y_var, x_vars_vec, halton_num=NA, individual=NA, N, model_name)
 
-if(model_name %in% c("NHN","NE","NHN-MDPD","NHN-PSI","NHN-MLQE","THT","NTN","NHN_Z","NE_Z") ){
+if(model_name %in% c("NHN","NE","NR","NHN-MDPD","NHN-PSI","NHN-MLQE","THT","NTN","NHN_Z","NE_Z") ){
 like.fn = function(x){
       
-      if(model_name %in% c("NHN","NE","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
+      if(model_name %in% c("NHN","NE","NR","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
       if(model_name ==     "THT"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
       if(model_name ==     "NTN"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
 
@@ -62,6 +62,14 @@ like.fn = function(x){
       l3    <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
       
       like  <-  l1+l2+l3}
+
+      if(model_name=="NR"){
+        sigv           <- x[1]
+        sigu          <- x[2]
+        sigma          <- sqrt(2*sigv**2+sigu^2)
+        z              <- (eps*sigu/sigv)/sigma
+        like           <- (log(sigv)- 2*log(sigma) - 1/2*(eps/sigv)^2 + 1/2*z^2 + 
+                          log(sqrt(2/pi)*exp(-1/2*z**2) - z*(1-erf(z/sqrt(2)))))}
       
       if(model_name == "NHN-MLQE"){
         NNN    <- length(data)

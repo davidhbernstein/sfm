@@ -59,15 +59,15 @@ if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset
       l1   <- log(1/x[2])
       l2   <- pnorm( -(eps/x[1]) - (x[1]    /x[2]), log.p = TRUE)
       l3   <- (eps/x[2]) + (x[1]^2 /  (2*x[2]^2)  )
-      like           <-  l1+l2+l3}
+      like <-  l1+l2+l3}
       
       if(model_name=="NR"){
-        sigv           <- x[1]
-        sigu          <- x[2]
-        sigma          <- sqrt(2*sigv**2+sigu^2)
-        z              <- (eps*sigu/sigv)/sigma
-        like           <- (log(sigv)- 2*log(sigma) - 1/2*(eps/sigv)^2 + 1/2*z^2 + 
-                          log(sqrt(2/pi)*exp(-1/2*z**2) - z*(1-erf(z/sqrt(2)))))}
+      sigv    <- x[1]
+      sigu    <- x[2]
+      sigma   <- sqrt(2*sigv**2+sigu^2)
+      z       <- (eps*sigu/sigv)/sigma
+      like    <- (log(sigv)- 2*log(sigma) - 1/2*(eps/sigv)^2 + 1/2*z^2 + 
+                  log(sqrt(2/pi)*exp(-1/2*z**2) - z*(1-erf(z/sqrt(2)))))}
       
       if(model_name == "NHN-MLQE"){
         NNN    <- length(data)

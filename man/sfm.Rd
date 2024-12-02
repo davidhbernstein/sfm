@@ -8,12 +8,12 @@ sfm
 Cross-sectional stochastic frontier models are estimated with the sfm() call.  For panel models, see the psfm() call.   
 }
 \usage{
-sfm(formula, model_name = c("NHN", "NHN_Z", "NE", "NE_Z", "THT", "NTN"), data, maxit.bobyqa = 10000, maxit.psoptim = 1000, maxit.optim = 1000, REPORT = 1, trace = 2, pgtol = 0, start_val = FALSE, PSopt = FALSE, bob = TRUE, optHessian = TRUE, inefdec = TRUE, upper = NA, Method = "L-BFGS-B")
+sfm(formula, model_name = c("NHN", "NHN_Z", "NE", "NE_Z", "THT", "NTN", "NR"), data, maxit.bobyqa = 10000, maxit.psoptim = 1000, maxit.optim = 1000, REPORT = 1, trace = 2, pgtol = 0, start_val = FALSE, PSopt = FALSE, bob = TRUE, optHessian = TRUE, inefdec = TRUE, upper = NA, Method = "L-BFGS-B")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
 \item{formula}{a symbolic description for the model to be estimated}
-\item{model_name}{model name for the estimation includes the: normal-half normal (NHN), normal-exponential (NE), student's t-half t (THT), and the normal-truncated normal (NTN).}
+\item{model_name}{model name for the estimation includes the: normal-half normal (NHN), normal-exponential (NE), student's t-half t (THT),  Normal-Rayleigh (NR), and the normal-truncated normal (NTN).}
 \item{data}{A data set}
 \item{maxit.bobyqa}{Maximum number of iterations for the bobyqa optimization routine}
 \item{maxit.psoptim}{Maximum number of iterations for the psoptim optimization routine}

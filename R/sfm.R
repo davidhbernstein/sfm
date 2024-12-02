@@ -23,12 +23,13 @@ data_proc2(data, data_x, fancy_vars, fancy_vars_z, data_z, y_var, x_vars_vec, ha
 
 if(model_name %in% c("NHN","NE","NR","NHN-MDPD","NHN-PSI","NHN-MLQE","THT","NTN","NHN_Z","NE_Z") ){
 like.fn = function(x){
-      if(model_name %in% c("NHN","NE","NR","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
-      if(model_name ==     "THT"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
-      if(model_name ==     "NTN"){                                      x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
-      if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset(data,select = z_vars)))
-                                            x_x_vec     <- x[2:as.numeric(n_x_vars+1)]
-                                            z_z_vec     <- x[as.numeric(n_x_vars+2):as.numeric(length(start_v))]}
+      
+if(model_name %in% c("NHN","NE","NR","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
+if(model_name %in% c("THT","NTN")){                                    x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
+
+if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset(data,select = z_vars)))
+                                      x_x_vec     <- x[2:as.numeric(n_x_vars+1)]
+                                      z_z_vec     <- x[as.numeric(n_x_vars+2):as.numeric(length(start_v))]}
 
       eps     <- (inefdec_n*(Y  - as.matrix(data_i_vars)%*%x_x_vec))
       

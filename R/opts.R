@@ -40,7 +40,7 @@ opt.optim     <- function(fn, start_v, lower.optim, upper.optim, maxit.optim, op
 }
 
 opt.psoptim   <- function(fn, start_v, lower.psoptim, upper.psoptim=NA, maxit.psoptim, psopt.TF, rand.order = TRUE){
-  start_feval   <-  fn(start_v)
+  start_feval <-  fn(start_v)
   if(isTRUE(psopt.TF ==TRUE)){  
     set.seed(1234)
     

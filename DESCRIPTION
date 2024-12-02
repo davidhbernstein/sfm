@@ -10,8 +10,8 @@ Suggests:
     knitr,
     MASS,
     rmarkdown
-Imports: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, pracma
-Depends: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, pracma, R (>= 4.4.0)
+Imports: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, pracma, gsl
+Depends: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, pracma, gsl, R (>= 4.4.0)
 License: GPL (>= 2)
 URL: https://www.davidharrybernstein.com/software
 LazyLoad: yes

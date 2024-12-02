@@ -11,12 +11,14 @@ lambda      <- sigma_u/sigma_v
 sigma       <- sqrt(sigma_u^2 + sigma_v^2)
 gam         <- 1 
 
-start_v_ntn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,mu,beta_hat))}    else{unname(c(lambda,sigma,mu,beta_0,beta_hat)) }
-start_v_t      <- if(is.na(beta_0_st)) {unname(c(sigma_u,sigma_v,1,beta_hat))}  else{unname(c(sigma_u,sigma_v,1,beta_0,beta_hat)) }
-start_v_ne     <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,beta_hat))}    else{unname(c(sigma_v,sigma_u,beta_0,beta_hat)) }
-start_v_nhn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,beta_hat))}       else{unname(c(lambda,sigma,beta_0,beta_hat)) }
-start_v_nr     <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,beta_hat))}    else{unname(c(sigma_v,sigma_u,beta_0,beta_hat)) }
-start_v_zisf   <- if(is.na(beta_0_st)) {unname(c(gam,sigma_v,sigma_u,beta_hat))}else{unname(c(gam,sigma_v,sigma_u,beta_0,beta_hat)) }
+start_v_ntn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,mu,beta_hat))}      else{unname(c(lambda,sigma,mu,beta_0,beta_hat)) }
+start_v_t      <- if(is.na(beta_0_st)) {unname(c(sigma_u,sigma_v,1,beta_hat))}    else{unname(c(sigma_u,sigma_v,1,beta_0,beta_hat)) }
+start_v_ng     <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,1,beta_hat))}    else{unname(c(sigma_v,sigma_u,1,beta_0,beta_hat)) }
+start_v_nnak   <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,0.5,beta_hat))}  else{unname(c(sigma_v,sigma_u,0.5,beta_0,beta_hat)) }
+start_v_ne     <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,beta_hat))}      else{unname(c(sigma_v,sigma_u,beta_0,beta_hat)) }
+start_v_nhn    <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,beta_hat))}         else{unname(c(lambda,sigma,beta_0,beta_hat)) }
+start_v_nr     <- if(is.na(beta_0_st)) {unname(c(sigma_v,sigma_u,beta_hat))}      else{unname(c(sigma_v,sigma_u,beta_0,beta_hat)) }
+start_v_zisf   <- if(is.na(beta_0_st)) {unname(c(gam,sigma_v,sigma_u,beta_hat))}  else{unname(c(gam,sigma_v,sigma_u,beta_0,beta_hat)) }
 
 if(model_name %in% c("NHN_Z","NE_Z")){
   start_v_nez  <- if(is.na(beta_0_st)) {unname(c(sigma_v,beta_hat,rep(mu,n_z_vars)))}else{unname(c(sigma_v,beta_0,beta_hat,rep(mu,n_z_vars))) }
@@ -55,6 +57,16 @@ if(model_name=="THT"){
   out            <- matrix(0,nrow = 3,ncol = length(start_v))
   colnames(out)  <- c("sigv","sigu","a",c(names(plm_lm$coefficients))) 
   lower_bob      <- c(rep(.Machine$double.eps,3),rep(-Inf,n_x_vars))}
+if(model_name=="NG"){
+  start_v        <- start_v_ng
+  out            <- matrix(0,nrow = 3,ncol = length(start_v))
+  colnames(out)  <- c("sigv","sigu","mu",c(names(plm_lm$coefficients))) 
+  lower_bob      <- c(rep(.Machine$double.eps,3),rep(-Inf,n_x_vars))}
+if(model_name=="NNAK"){
+  start_v        <- start_v_nnak
+  out            <- matrix(0,nrow = 3,ncol = length(start_v))
+  colnames(out)  <- c("sigv","sigu","mu",c(names(plm_lm$coefficients))) 
+  lower_bob      <- c(rep(.Machine$double.eps,3),rep(-Inf,n_x_vars))}
 if(model_name=="NTN"){
   start_v        <- start_v_ntn
   out            <- matrix(0,nrow = 3,ncol = length(start_v))
@@ -66,8 +78,9 @@ if (isTRUE(is.numeric(start_val))) {start_v <- start_val}
 rownames(out)  <- c("par","st_err","t-val") 
 
 NAMES       <- c("plm_lm", "beta_hat", "epsilon_hat", "beta_0_st", "sigma_u", "sigma_v", "mu",
-                 "beta_0", "lambda", "sigma", "start_v_ntn", "start_v_t", "start_v_ne", "start_v_nr", "start_v_nhn",
-                 "start_v", "out", "lower_bob")
+                 "beta_0", "lambda", "sigma", "start_v_ntn","start_v_ng", "start_v_nnak",
+                 "start_v_t", "start_v_ne", "start_v_nr", "start_v_nhn", "start_v", "out",
+                 "lower_bob")
 
 for (X in NAMES){
 assign(X, get(X), envir=parent.frame())}  
@@ -187,6 +200,7 @@ if(model_name == "TRE"){                                                 lower1 
 if(model_name == "GTRE"){                                                lower1 <- c(rep(.0000001,4) ,  start_v[-c(1:4)] - differ)} 
 if(model_name %in% c("NHN","NE","NR","NTN","NHN-MDPD","NHN-PSI","NHN-MLQE")){lower1 <- c(rep(.0000001,2),   start_v[-c(1:2)] - differ )}
 if(model_name =="THT"){                                                  lower1 <- c(rep(.0000001,3),   start_v[-c(1:3)] - differ )}  
+if(model_name %in% c("NG","NNAK")){                                      lower1 <- c(rep(.0000001,3),   start_v[-c(1:3)] - differ )} 
 if(model_name %in% c("ZISF")){                                           lower1 <- c(start_v[1]-differ, rep(.0000001,2),   start_v[-c(1:3)] - differ)}  
 if(model_name %in% c("ZISF_Z")){                                         lower1 <- c(rep(.0000001,2),  start_v[-c(1:2)] - differ)}
 if(model_name %in% c("NHN_Z","NE_Z")){                                   lower1 <- c(rep(.0000001,1),  start_v[-c(1)]   - differ)}  

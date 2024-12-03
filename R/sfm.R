@@ -145,7 +145,7 @@ opt.bobyqa(fn=like.fn, start_v=start_v, lower.bobyqa=lower_bob, maxit.bobyqa=max
 lower.start(start_v, model_name, differ=1)
 
 opt.psoptim(fn=like.fn, start_v, lower.psoptim=lower1,
-            upper.psoptim=lower1, maxit.psoptim, psopt.TF=PSopt, rand.order = FALSE)  ### ADS: shouldn't upper.psoptim=upper1?
+            upper.psoptim=upper1, maxit.psoptim, psopt.TF=PSopt, rand.order = FALSE)  
 
 lower.start(start_v, model_name, differ=0.5)
 opt.optim(fn = like.fn, start_v = start_v, lower.optim =lower1,

@@ -1,5 +1,5 @@
 sfm <- function(formula, 
-                model_name    = c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE","NHN_Z","NE","NE_Z","NR","THT","NTN"), 
+                model_name    = c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE","NHN_Z","NE","NE_Z","NR","THT","NTN","NG","NNAK"), 
                 data, 
                 maxit.bobyqa  = 10000,
                 maxit.psoptim = 1000,
@@ -21,10 +21,10 @@ data_proc(formula,   data, model_name, individual = NULL, inefdec)
 start_cs( formula_x ,data_orig, x_vars_vec, intercept, model_name, n_x_vars, start_val,n_z_vars,z_vars) 
 data_proc2(data, data_x, fancy_vars, fancy_vars_z, data_z, y_var, x_vars_vec, halton_num=NA, individual=NA, N, model_name)
 
-if(model_name %in% c("NHN","NE","NR","NHN-MDPD","NHN-PSI","NHN-MLQE","THT","NTN","NHN_Z","NE_Z") ){
+if(model_name %in% c("NHN","NE","NR","NG","NNAK","NHN-MDPD","NHN-PSI","NHN-MLQE","THT","NTN","NHN_Z","NE_Z") ){
 like.fn = function(x){
       
-if(model_name %in% c("NHN","NE","NR","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
+if(model_name %in% c("NHN","NE","NR","NG","NNAK","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
 if(model_name %in% c("THT","NTN")){                                    x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
 
 if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset(data,select = z_vars)))
@@ -62,12 +62,12 @@ if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset
       like <-  l1+l2+l3}
       
       if(model_name=="NR"){
-      sigv    <- x[1]
-      sigu    <- x[2]
-      sigma   <- sqrt(2*sigv**2+sigu^2)
-      z       <- (eps*sigu/sigv)/sigma
-      like    <- (log(sigv)- 2*log(sigma) - 1/2*(eps/sigv)^2 + 1/2*z^2 + 
-                  log(sqrt(2/pi)*exp(-1/2*z**2) - z*(1-erf(z/sqrt(2)))))}
+      sigv           <- x[1]
+      sigu           <- x[2]
+      sigma          <- sqrt(2*sigv^2+sigu^2)
+      z              <- (eps*sigu/sigv)/sigma
+      like           <- (log(sigv)- 2*log(sigma) - 1/2*(eps/sigv)^2 + 1/2*z^2 + 
+                         log(sqrt(2/pi)*exp(-1/2*z**2) - z*(1-erf(z/sqrt(2)))))}
       
       if(model_name == "NHN-MLQE"){
         NNN    <- length(data)
@@ -114,6 +114,23 @@ if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset
         l4   <-  pnorm(((mu/lam)-eps*lam)/sig,   log.p=TRUE)  
         l5   <- -pnorm((mu/sig)*sqrt(1+lam^(-2)),log.p=TRUE)  
         like <- l1 + l2 + l3 + l4 + l5}
+
+      if(model_name %in% c("NG","NNAK")){
+        lnDv <- function(nu,z){
+          ((nu/2)*log(2) + 0.5*log(pi) -z^2/4 + log(1/gamma((1-nu)/2)*hyperg_1F1(-nu/2,1/2,z^2/2)
+          -sqrt(2)*z/gamma(-nu/2)*hyperg_1F1((1-nu)/2,3/2,z^2/2),))}
+        sig_v  <- x[1]
+        sig_u  <- x[2]
+        mu     <- x[3]
+        if(model_name=="NG"){
+          like   <- ((mu-1)*log(sig_v) - 1/2*log(2) - 1/2*log(pi) - mu*log(sig_u)
+                    - 1/2*(eps/sig_v)^2 + 1/4*(eps/sig_v+sig_v/sig_u)^2
+                    + lnDv(-mu,eps/sig_v+sig_v/sig_u))}
+        if(model_name=="NNAK"){
+          sigma <- sqrt(2*mu*sig_v^2+sig_u^2)
+          like   <- (lgamma(2*mu) - lgamma(mu) + 1/2*log(2) - 1/2*log(pi) + mu*log(mu)
+                    + (2*mu-1)*log(sig_v) - 2*mu*log(sigma) - 1/2*(eps/sig_v)^2
+                    + 1/4*((eps*sig_u/sig_v)/sigma)^2 + lnDv(-2*mu,(eps*sig_u/sig_v)/sigma))}}
       
       like[like==-Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
       like[like== Inf]         <-  -sqrt(.Machine$double.xmax/length(like))
@@ -128,7 +145,7 @@ opt.bobyqa(fn=like.fn, start_v=start_v, lower.bobyqa=lower_bob, maxit.bobyqa=max
 lower.start(start_v, model_name, differ=1)
 
 opt.psoptim(fn=like.fn, start_v, lower.psoptim=lower1,
-            upper.psoptim=lower1, maxit.psoptim, psopt.TF=PSopt, rand.order = FALSE)  
+            upper.psoptim=lower1, maxit.psoptim, psopt.TF=PSopt, rand.order = FALSE)  ### ADS: shouldn't upper.psoptim=upper1?
 
 lower.start(start_v, model_name, differ=0.5)
 opt.optim(fn = like.fn, start_v = start_v, lower.optim =lower1,
@@ -174,7 +191,27 @@ exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/  pmax( (1-pnorm(inner)), .
 exp_u_hat  <- pmax(exp_u_hat, 0)
 exp_u_hat  <- pmin(exp_u_hat, 1)}
 
-    if(model_name %in%  c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE","NHN_Z") ){
+if(model_name %in% c("NG","NNAK") ){
+lnDv <- function(nu,z){
+  ((nu/2)*log(2) + 0.5*log(pi) -z^2/4 + log(1/gamma((1-nu)/2)*hyperg_1F1(-nu/2,1/2,z^2/2)
+  -sqrt(2)*z/gamma(-nu/2)*hyperg_1F1((1-nu)/2,3/2,z^2/2),))}
+beta  <- opt$par[-c(1:3)]
+sig_v <- opt$par[1]
+sig_u <- opt$par[2]
+mu    <- opt$par[3]
+eps_hat    <- inefdec_n*(Y - rowSums(t(t(data_i_vars)*beta)))
+if(model_name=="NG"){
+  z         <- eps_hat/sig_v + sig_v/sig_u
+  exp_u_hat <- exp(((z+sig_v)/2)^2)/exp((z/2)^2)*exp(lnDv(-mu,z+sig_v))/exp(lnDv(-mu,z))}
+if(model_name=="NNAK"){
+  sigma     <- sqrt(2*mu*sig_v^2 + sig_u^2)
+  z         <- (eps_hat*sig_u/sig_v)/sigma
+  exp_u_hat <- exp((z/2 + sig_v*sig_u/(2*sigma))^2)/exp((z/2)^2)*exp(lnDv(-2*mu,z+sig_v*sig_u/sigma))/exp(lnDv(-2*mu,z))}
+exp_u_hat  <- pmax(exp_u_hat, 0)
+exp_u_hat  <- pmin(exp_u_hat, 1)}
+
+
+    if(model_name %in%  c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE","NHN_Z","NG","NNAK") ){
     ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, exp_u_hat)
     names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","exp_u_hat")}else{
     ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula)

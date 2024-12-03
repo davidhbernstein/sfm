@@ -66,9 +66,12 @@ if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset
       sigu           <- x[2]
       sigma          <- sqrt(2*sigv^2+sigu^2)
       z              <- (eps*sigu/sigv)/sigma
-      like           <- (log(sigv)- 2*log(sigma) - 1/2*(eps/sigv)^2 + 1/2*z^2 + 
-                         log(sqrt(2/pi)*exp(-1/2*z**2) - z*(1-erf(z/sqrt(2)))))}
-      
+      like           <- log(pmax(sigv,.Machine$double.eps))- 2*log(pmax(sigma,.Machine$double.eps)) - 1/2*(eps/sigv)^2 + 1/2*z^2 + 
+                        log(pmax(sqrt(2/pi)*exp(-1/2*z**2) - z*(1-erf(z/sqrt(2))), z*0+.Machine$double.eps))}
+
+      # like           <- (log(sigv)- 2*log(sigma) - 1/2*(eps/sigv)^2 + 1/2*z^2 + 
+      #                    log(sqrt(2/pi)*exp(-1/2*z**2) - z*(1-erf(z/sqrt(2)))))}  ## previous version has zeros under the second log sign 
+
       if(model_name == "NHN-MLQE"){
         NNN    <- length(data)
         QQ     <- 1 - (1/ (10*log(NNN+10)) )

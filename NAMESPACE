@@ -19,3 +19,5 @@ import("haven") # import whole package
 import("fdrtool") # import whole package
 import("numDeriv") # import whole package
 import("pracma") # import whole package
+import("gsl") # import whole package
+

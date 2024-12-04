@@ -40,7 +40,7 @@ like.fn = function(x){
         lamb_fun       <- sigma_u_fun/sigma_v_fun
         like           <-       log(pmax(   (2/sigma_fun)  * 
                                               dnorm(eps/sigma_fun)*  
-                                              pnorm(-eps*lamb_fun/sigma_fun)  , eps*0+.Machine$double.eps) )}
+                                              pnorm(-eps*lamb_fun/sigma_fun)  , eps*0+.Machine$double.xmin) )}
       
       if(model_name=="NE_Z"){
         sigma_u_fun    <- exp(data_z_vars%*%z_z_vec)
@@ -53,7 +53,7 @@ like.fn = function(x){
       if(model_name == "NHN"){
       like  <-      as.numeric(log(     pmax(   (2/x[2])    * 
                                               dnorm(eps/x[2]) *
-                                              pnorm(-eps*x[1]/x[2])  ,  eps*0+.Machine$double.eps )    ))}
+                                              pnorm(-eps*x[1]/x[2])  ,  eps*0+.Machine$double.xmin )    ))}
       
       if(model_name == "NE"){
       l1   <- log(1/x[2])
@@ -66,8 +66,9 @@ like.fn = function(x){
         sigu          <- x[2]
         sigma          <- sqrt(2*sigv^2+sigu^2)
         z              <- (eps*sigu/sigv)/sigma
-        like           <- (log(sigv)- 2*log(sigma) - 1/2*(eps/sigv)^2 + 1/2*z^2 + 
-                          log(sqrt(2/pi)*exp(-1/2*z**2) - z*(1-erf(z/sqrt(2)))))}
+        like           <- (log(pmax(sigv,.Machine$double.xmin))- 2*log(pmax(sigma,.Machine$double.xmin))
+                          - 1/2*(eps/sigv)^2 + 1/2*z^2 + log(pmax(sqrt(2/pi)*exp(-1/2*z**2)
+                          - z*(1-erf(z/sqrt(2))),.Machine$double.xmin)))}
       
       if(model_name == "NHN-MLQE"){
         NNN    <- length(data)
@@ -101,7 +102,7 @@ like.fn = function(x){
         lamb    <- sig_u/sig_v
         sig     <- sqrt(sig_v^2 + sig_u^2)
         like    <- as.numeric(log(pmax(2*dt(eps, df=a)*
-                   pt((-eps*lamb/sig)*sqrt((a+1)/(sig^{-2}*eps^2 + a))  ,df=a+1)  ,  eps*0+.Machine$double.eps))) }
+                   pt((-eps*lamb/sig)*sqrt((a+1)/(sig^{-2}*eps^2 + a))  ,df=a+1)  ,  eps*0+.Machine$double.xmin))) }
       
       if(model_name=="NTN"){
         lam  <- x[1]
@@ -118,7 +119,7 @@ like.fn = function(x){
       if(model_name %in% c("NG","NNAK")){
         lnDv <- function(nu,z){
           ((nu/2)*log(2) + 0.5*log(pi) -z^2/4 + log(1/gamma((1-nu)/2)*hyperg_1F1(-nu/2,1/2,z^2/2)
-          -sqrt(2)*z/gamma(-nu/2)*hyperg_1F1((1-nu)/2,3/2,z^2/2),))}
+          -sqrt(2)*z/gamma(-nu/2)*hyperg_1F1((1-nu)/2,3/2,z^2/2)))}
         sig_v  <- x[1]
         sig_u  <- x[2]
         mu     <- x[3]
@@ -170,9 +171,21 @@ sig_v <- sig_u/lamb
 eps_hat    <- inefdec_n*(Y - rowSums(t(t(data_i_vars)*beta))) 
 sig_star   <- sig_u*sig_v/sig
 inner      <- (lamb*eps_hat)/sig
-exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/  pmax( (1-pnorm(inner)), .Machine$double.eps)    )*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
+exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/  pmax( (1-pnorm(inner)), .Machine$double.xmin)    )*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
 exp_u_hat  <- pmax(exp_u_hat, 0)
 exp_u_hat  <- pmin(exp_u_hat, 1)}
+
+if(model_name=="NR"){
+beta      <- opt$par[-c(1:2)]
+sig_v     <- opt$par[1]
+sig_u     <- opt$par[2]
+eps_hat   <- inefdec_n*(Y - rowSums(t(t(data_i_vars)*beta))) 
+sigma     <- sqrt(2*sig_v^2 + sig_u^2)
+z         <- (eps_hat*sig_u/sig_v)/sigma
+exp_u_hat <- (exp(1/2*(z+sig_v*sig_u/sigma)^2-1/2*z^2)*
+              (exp(-1/2*(z+sig_v*sig_u/sigma)^2)-sqrt(pi/2)*(z+sig_v*sig_u/sigma)*(1-erf(1/sqrt(2)*(z+sig_v*sig_u/sigma))))/
+              (exp(-z^2/2)-sqrt(pi/2)*z*(1-erf(z/sqrt(2)))))
+exp_u_hat <- pmax(exp_u_hat, 0)}
 
 if(model_name=="NHN_Z"){
 NX         <- n_x_vars + 1
@@ -187,7 +200,7 @@ sig        <- sqrt(sig_u^2 + sig_v^2)
 eps_hat    <- inefdec_n*(Y - rowSums(t(t(data_i_vars)*beta)))
 sig_star   <- (sig_u*sig_v)  /sig
 inner      <- (lamb*eps_hat) /sig
-exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/  pmax( (1-pnorm(inner)), .Machine$double.eps)  )*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
+exp_u_hat  <- ((1-pnorm((sig_u*sig_v/sig) + inner ))/  pmax( (1-pnorm(inner)), .Machine$double.xmin)  )*exp( (sig_u^2/sig^2)*(eps_hat + 0.5*sig_v^2) )
 exp_u_hat  <- pmax(exp_u_hat, 0)
 exp_u_hat  <- pmin(exp_u_hat, 1)}
 
@@ -211,7 +224,7 @@ exp_u_hat  <- pmax(exp_u_hat, 0)
 exp_u_hat  <- pmin(exp_u_hat, 1)}
 
 
-    if(model_name %in%  c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE","NHN_Z","NG","NNAK") ){
+    if(model_name %in%  c("NHN","NHN-MDPD","NHN-PSI","NHN-MLQE","NHN_Z","NR","NG","NNAK") ){
     ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula, exp_u_hat)
     names(ret_stuff)  <- c("out","opt","total_time","start_v","model_name","formula","exp_u_hat")}else{
     ret_stuff <- list(t(out),c(opt),total_time,start_v,model_name,formula)

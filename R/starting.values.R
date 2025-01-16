@@ -126,23 +126,18 @@ if(isFALSE(is.numeric(start_val)) &  model_name %in% c("TRE_Z","GTRE_Z","TRE","G
 if(model_name %in% c("GTRE_Z","TRE_Z")){beta_0  <- beta_0_st + exp_u}
   
 if(model_name %in% c("GTRE","TRE")){
-if (isTRUE(is.numeric(start_val))) {
-  start_v <- start_val
-  assign("start_v", start_v, envir=parent.frame())}else{
-start_v <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,sigma_r,sigma_h,beta_hat))} else{unname(c(lambda,sigma,sigma_r,sigma_h,beta_0,beta_hat))} }
+if (isTRUE(is.numeric(start_val))){start_v <- start_val}else{
+start_v <- if(is.na(beta_0_st)) {unname(c(lambda,sigma,sigma_r,sigma_h,beta_hat))} else{unname(c(lambda,sigma,sigma_r,sigma_h,beta_0,beta_hat))}}
 
 out           <- matrix(0,nrow = 3,ncol = length(start_v))
 rownames(out) <- c("par","st_err","t-val") 
 if(model_name == "TRE"  & isTRUE(is.numeric(start_val))){colnames(out)<- c("lambda","sig","sig_r",x_vars_vec)}else{
 colnames(out) <- c("lambda","sig","sig_r","sig_h",x_vars_vec)}
 
-if(model_name == "TRE" & isFALSE(is.numeric(start_val))){
-  out      <- out[,-c(4)]  
-  start_v  <- start_v[-c(4)]
-}
+if(model_name == "TRE" & isFALSE(is.numeric(start_val))){out      <- out[,   -c(4)]  
+                                                         start_v  <- start_v[-c(4)]}
 assign("start_v", start_v, envir=parent.frame())
-assign("out", out, envir=parent.frame())
-}  
+assign("out",     out,     envir=parent.frame())}  
 
 NAMES        <- c("sfa_eps", "sfa_alp", "exp_eta", "exp_u", "sigma_v", "sigma_u", "sigma_r",
                   "sigma_h", "beta_0", "lambda", "sigma")

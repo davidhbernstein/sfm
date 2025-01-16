@@ -25,7 +25,7 @@ if(model_name %in% c("NHN","NE","NR","NG","NNAK","NHN-MDPD","NHN-PSI","NHN-MLQE"
 like.fn = function(x){
       
 if(model_name %in% c("NHN","NE","NR","NG","NNAK","NHN-MDPD","NHN-PSI","NHN-MLQE")){x_x_vec <- x[3:as.numeric(n_x_vars + 2)]}
-if(model_name %in% c("THT","NTN")){                                    x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
+if(model_name %in% c("THT","NTN")){                                                x_x_vec <- x[4:as.numeric(n_x_vars + 3)]}
 
 if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset(data,select = z_vars)))
                                       x_x_vec     <- x[2:as.numeric(n_x_vars+1)]
@@ -63,7 +63,7 @@ if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset
       
       if(model_name=="NR"){
         sigv           <- x[1]
-        sigu          <- x[2]
+        sigu           <- x[2]
         sigma          <- sqrt(2*sigv^2+sigu^2)
         z              <- (eps*sigu/sigv)/sigma
         like           <- (log(pmax(sigv,.Machine$double.xmin))- 2*log(pmax(sigma,.Machine$double.xmin))

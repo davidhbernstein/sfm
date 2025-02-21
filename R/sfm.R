@@ -40,7 +40,7 @@ if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset
         lamb_fun       <- sigma_u_fun/sigma_v_fun
         like           <-       log(pmax(   (2/sigma_fun)  * 
                                               dnorm(eps/sigma_fun)*  
-                                              pnorm(-eps*lamb_fun/sigma_fun)  , eps*0+.Machine$double.xmin) )}
+                                              pnorm(-eps*lamb_fun/sigma_fun), .Machine$double.xmin) )}
       
       if(model_name=="NE_Z"){
         sigma_u_fun    <- exp(data_z_vars%*%z_z_vec)
@@ -53,7 +53,7 @@ if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset
       if(model_name == "NHN"){
       like  <-      as.numeric(log(     pmax(   (2/x[2])    * 
                                               dnorm(eps/x[2]) *
-                                              pnorm(-eps*x[1]/x[2])  ,  eps*0+.Machine$double.xmin )    ))}
+                                              pnorm(-eps*x[1]/x[2])  ,  .Machine$double.xmin )    ))}
       
       if(model_name == "NE"){
       l1   <- log(1/x[2])
@@ -102,7 +102,7 @@ if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset
         lamb    <- sig_u/sig_v
         sig     <- sqrt(sig_v^2 + sig_u^2)
         like    <- as.numeric(log(pmax(2*dt(eps, df=a)*
-                   pt((-eps*lamb/sig)*sqrt((a+1)/(sig^{-2}*eps^2 + a))  ,df=a+1)  ,  eps*0+.Machine$double.xmin))) }
+                   pt((-eps*lamb/sig)*sqrt((a+1)/(sig^{-2}*eps^2 + a))  ,df=a+1)  , .Machine$double.xmin))) }
       
       if(model_name=="NTN"){
         lam  <- x[1]

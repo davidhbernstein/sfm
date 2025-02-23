@@ -73,14 +73,14 @@ if(model_name %in% c("NE_Z","NHN_Z")){data_z_vars <- as.matrix(data.frame(subset
       if(model_name == "NHN-MLQE"){
         NNN    <- length(data)
         QQ     <- 1 - (1/ (10*log(NNN+10)) )
-        like0  <- (2/x[2])  *    dnorm(eps/x[2])*  pnorm(-eps*x[1]/x[2])    
+        like0  <- pmax( (2/x[2])  *    dnorm(eps/x[2])*  pnorm(-eps*x[1]/x[2]) ,  .Machine$double.xmin )    
         like   <- sum(  (like0^(1-QQ) - 1) /  (1-QQ)  )}
       
-      if(model_name == "NHN-MDPD"){
-        fn_inner  <- function(z){exp(-(1+alpha)*(z^2/2))*pnorm(-z*x[1])^(1+alpha)}
-        like      <-  -as.numeric((1/ (x[2]^alpha))* 
-                               (( (sqrt(2) / sqrt(pi))*integrate(f=fn_inner,lower = -Inf,upper = Inf)[[1]])-    
-                                  ((1+(1/alpha))*(1/N)*sum(exp(-alpha*(eps^2/ (2*x[2]^2)))*pnorm(-(eps*x[1])/x[2])^alpha))))}
+      # if(model_name == "NHN-MDPD"){
+      #   fn_inner  <- function(z){exp(-(1+alpha)*(z^2/2))*pnorm(-z*x[1])^(1+alpha)}
+      #   like      <-  -as.numeric((1/ (x[2]^alpha))* 
+      #                             (( (sqrt(2) / sqrt(pi))*integrate(f=fn_inner,lower = -Inf,upper = Inf)[[1]])-    
+      #                             ((1+(1/alpha))*(1/N)*sum(exp(-alpha*(eps^2/ (2*x[2]^2)))*pnorm(-(eps*x[1])/x[2])^alpha))))}
       
       if(model_name == "NHN-PSI"){
         fn_int  <- function(z){ 

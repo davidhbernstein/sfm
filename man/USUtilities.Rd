@@ -9,7 +9,7 @@ Panel data on U.S. investor-owned fossil fuel-fired steam electric utilities for
 }
 \usage{data("USUtilities")}
 \format{
-  A data frame with 972 observations (a balanced panel of observations on 81 farmers over 12 years) on the following 7 variables.
+  A data frame with 972 observations (a balanced panel of observations on 81 utilities over 12 years) on the following 7 variables.
   \describe{
     \item{\code{firmID}}{a numeric vector containing a unique firm identifier}
     \item{\code{year}}{a numeric vector containing the year of the observation}
@@ -34,3 +34,4 @@ data(USUtilities)
 plot(USUtilities)
 }
 \keyword{datasets}
+

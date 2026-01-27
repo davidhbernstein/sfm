@@ -1,17 +1,12 @@
 Package: sfm
-Version: 4.01
-Date: 2024-12-02
-Title: Stochastic Frontier Models
+Version: 4.03
+Date: 2026-01-26
+Title: Stochastic Frontier Models 
 Type: Package
-Authors: Federico Belotti, David Bernstein, Christopher Parmeter, Alexander Stead
-Maintainer: David Bernstein <dbernstein@bus.miami.edu> 
-Description: R package sfm makes the estimation of cross-sectional and panel stochastic frontier models user friendly. This package is currently being developed to work in a wide range of applications. The main functions of the package are two cross-sectional functions: "sfm" and "zsfm" as well as a panel function "psfm" which all implement various SFA based estimators.
-Suggests: 
-    knitr,
-    MASS,
-    rmarkdown
-Imports: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, pracma, gsl
-Depends: plm, minqa, randtoolbox, matrixStats, frontier, Jmisc, mnormt, truncnorm, tmvtnorm, Formula, pso, cubature, moments, Hmisc, readxl, haven, fdrtool, numDeriv, pracma, gsl, R (>= 4.4.0)
+Author: David Bernstein
+Maintainer: David Bernstein <davebernstein1@gmail.com> 
+Description: The sfm package has moved to CRAN with the new name sfa.
+Depends: R (>= 4.4.0)
 License: GPL (>= 2)
 URL: https://www.davidharrybernstein.com/software
 LazyLoad: yes

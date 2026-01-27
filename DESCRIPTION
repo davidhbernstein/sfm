@@ -6,6 +6,7 @@ Type: Package
 Author: David Bernstein
 Maintainer: David Bernstein <davebernstein1@gmail.com> 
 Description: The sfm package has moved to CRAN with the new name sfa.
+Imports: sfa, knitr
 Depends: R (>= 4.4.0)
 License: GPL (>= 2)
 URL: https://www.davidharrybernstein.com/software
